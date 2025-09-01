@@ -1,0 +1,966 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>下载页面</title>
+  <style>
+    html, body {
+      height: 100%;
+      min-height: 100vh;
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      overflow: hidden;
+    }
+    .download-page {
+      min-height: 100vh;
+      width: 100vw;
+      background: url('https://img.aidomino360.com/download/promotion.png') no-repeat center center;
+      background-size: cover;
+      position: relative;
+      overflow-x: hidden;
+      padding-top: calc(env(safe-area-inset-top, 0px) + 16px);
+    }
+    .btn-group {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 130px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 18px;
+      z-index: 10;
+    }
+    
+    /* iPad适配样式 */
+    @media only screen and (min-width: 768px) and (max-width: 1024px) {
+      .download-page {
+        padding-top: calc(env(safe-area-inset-top, 0px) + 32px);
+        background-size: 100% auto;
+        max-width: 1024px;
+        margin: 0 auto;
+      }
+      
+      .btn-group {
+        bottom: 200px;
+        gap: 24px;
+        max-width: 1024px;
+        margin: 0 auto;
+        left: 50%;
+        transform: translateX(-50%);
+      }
+      
+      .btn-android, .btn-ios {
+        width: 50vw;
+        max-width: 450px;
+        height: 60px;
+        font-size: 24px;
+        border-radius: 30px;
+      }
+      
+      .icon {
+        font-size: 26px;
+        margin-right: 12px;
+      }
+      
+      .text {
+        font-size: 24px;
+      }
+    }
+    
+    /* iPad Pro 11寸适配 */
+    @media only screen and (min-width: 834px) and (max-width: 1194px) {
+      .download-page {
+        padding-top: calc(env(safe-area-inset-top, 0px) + 40px);
+        max-width: 1194px;
+        margin: 0 auto;
+      }
+      
+      .btn-group {
+        bottom: 220px;
+        gap: 28px;
+        max-width: 1194px;
+        margin: 0 auto;
+        left: 50%;
+        transform: translateX(-50%);
+      }
+      
+      .btn-android, .btn-ios {
+        width: 45vw;
+        max-width: 500px;
+        height: 64px;
+        font-size: 26px;
+        border-radius: 32px;
+      }
+      
+      .icon {
+        font-size: 28px;
+        margin-right: 14px;
+      }
+      
+      .text {
+        font-size: 26px;
+      }
+    }
+    
+    /* iPad Pro 12.9寸适配 */
+    @media only screen and (min-width: 1024px) and (max-width: 1366px) {
+      .download-page {
+        padding-top: calc(env(safe-area-inset-top, 0px) + 48px);
+        max-width: 1366px;
+        margin: 0 auto;
+      }
+      
+      .btn-group {
+        bottom: 240px;
+        gap: 32px;
+        max-width: 1366px;
+        margin: 0 auto;
+        left: 50%;
+        transform: translateX(-50%);
+      }
+      
+      .btn-android, .btn-ios {
+        width: 40vw;
+        max-width: 550px;
+        height: 64px;
+        font-size: 28px;
+        border-radius: 36px;
+      }
+      
+      .icon {
+        font-size: 32px;
+        margin-right: 16px;
+      }
+      
+      .text {
+        font-size: 28px;
+      }
+    }
+    
+    /* 新增入口按钮样式 */
+    .entry-group {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 60px;
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      z-index: 10;
+    }
+    
+    .entry-btn {
+      padding: 12px 24px;
+      border: 2px solid rgba(255, 255, 255, 0.8);
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.85));
+      color: #1976ff;
+      font-size: 15px;
+      font-weight: 500;
+      text-decoration: none;
+      cursor: pointer;
+      border-radius: 25px;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15), 0 2px 8px rgba(25, 118, 255, 0.1);
+      backdrop-filter: blur(10px);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .entry-btn::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+      transition: left 0.5s;
+    }
+    
+    .entry-btn:hover {
+      color: #fff;
+      background: linear-gradient(135deg, #1976ff, #1565c0);
+      border-color: #1976ff;
+      box-shadow: 0 8px 25px rgba(25, 118, 255, 0.3), 0 4px 15px rgba(0, 0, 0, 0.2);
+      transform: translateY(-2px);
+    }
+    
+    .entry-btn:hover::before {
+      left: 100%;
+    }
+    
+    .entry-btn:active {
+      transform: translateY(0);
+      box-shadow: 0 4px 15px rgba(25, 118, 255, 0.2);
+    }
+    
+    /* iPad适配 - 入口按钮 */
+    @media only screen and (min-width: 768px) and (max-width: 1024px) {
+      .entry-group {
+        bottom: 100px;
+        gap: 30px;
+        max-width: 1024px;
+        margin: 0 auto;
+        left: 50%;
+        transform: translateX(-50%);
+      }
+      .entry-btn {
+        font-size: 16px;
+        padding: 14px 28px;
+        border-radius: 28px;
+        border-width: 2px;
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.18), 0 3px 10px rgba(25, 118, 255, 0.12);
+      }
+    }
+    
+    /* iPad Pro 11寸适配 - 入口按钮 */
+    @media only screen and (min-width: 834px) and (max-width: 1194px) {
+      .entry-group {
+        bottom: 120px;
+        gap: 35px;
+        max-width: 1194px;
+        margin: 0 auto;
+        left: 50%;
+        transform: translateX(-50%);
+      }
+      .entry-btn {
+        font-size: 18px;
+        padding: 16px 32px;
+        border-radius: 32px;
+        border-width: 2px;
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2), 0 4px 15px rgba(25, 118, 255, 0.15);
+      }
+    }
+    
+    /* iPad Pro 12.9寸适配 - 入口按钮 */
+    @media only screen and (min-width: 1024px) and (max-width: 1366px) {
+      .entry-group {
+        bottom: 140px;
+        gap: 40px;
+        max-width: 1366px;
+        margin: 0 auto;
+        left: 50%;
+        transform: translateX(-50%);
+      }
+      .entry-btn {
+        font-size: 20px;
+        padding: 18px 36px;
+        border-radius: 36px;
+        border-width: 3px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25), 0 5px 20px rgba(25, 118, 255, 0.2);
+      }
+    }
+    
+    /* iPad横屏模式适配 */
+    @media only screen and (min-width: 768px) and (max-width: 1366px) and (orientation: landscape) {
+      .download-page {
+        padding-top: calc(env(safe-area-inset-top, 0px) + 20px);
+        max-width: 1366px;
+        margin: 0 auto;
+      }
+      
+      .btn-group {
+        bottom: 160px;
+        gap: 20px;
+        max-width: 1366px;
+        margin: 0 auto;
+        left: 50%;
+        transform: translateX(-50%);
+      }
+      
+      .btn-android, .btn-ios {
+        width: 35vw;
+        max-width: 400px;
+        height: 56px;
+        font-size: 22px;
+      }
+      
+      .entry-group {
+        bottom: 80px;
+        gap: 25px;
+        max-width: 1366px;
+        margin: 0 auto;
+        left: 50%;
+        transform: translateX(-50%);
+      }
+      
+      .entry-btn {
+        font-size: 16px;
+        padding: 12px 24px;
+        border-radius: 24px;
+        border-width: 2px;
+        box-shadow: 0 5px 18px rgba(0, 0, 0, 0.16), 0 3px 12px rgba(25, 118, 255, 0.1);
+      }
+    }
+    .btn-android, .btn-ios {
+      width: 80vw;
+      max-width: 340px;
+      height: 48px;
+      border-radius: 24px;
+      font-size: 20px;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #1976ff;
+      color: #fff;
+      border: none;
+      text-align: center;
+      line-height: 1;
+    }
+    .btn-ios {
+      background: #bdbdbd;
+      color: #fff;
+    }
+    .icon {
+      display: inline-flex;
+      align-items: center;
+      margin-right: 8px;
+      font-size: 22px;
+      flex-shrink: 0;
+    }
+    
+    .text {
+      display: inline-block;
+      vertical-align: middle;
+      line-height: 1;
+    }
+    .btn-ios[disabled] {
+      pointer-events: none;
+      opacity: 0.7;
+    }
+    .btn-android a {
+      text-decoration: none;
+      color: #fff;
+    }
+    /* 蒙层样式 */
+    .wechat-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.9);
+      z-index: 99999;
+      display: none;
+    }
+    
+    /* 确保蒙层可见 */
+    .wechat-overlay.show {
+      display: block !important;
+    }
+    
+    /* 备用蒙层样式 */
+    .wechat-overlay.visible {
+      display: block !important;
+      opacity: 1 !important;
+      visibility: visible !important;
+    }
+    
+    /* 内容页面样式 */
+    .content-page {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      z-index: 1000;
+      overflow-y: auto;
+      overflow-x: hidden;
+      padding: 20px;
+      box-sizing: border-box;
+      -webkit-overflow-scrolling: touch; /* 为iOS设备提供平滑滚动 */
+    }
+    
+    .content-header {
+      display: flex;
+      align-items: center;
+      margin-bottom: 30px;
+      padding-top: env(safe-area-inset-top, 20px);
+    }
+    
+    .back-btn {
+      background: rgba(255, 255, 255, 0.2);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      color: white;
+      padding: 10px 16px;
+      border-radius: 20px;
+      font-size: 16px;
+      cursor: pointer;
+      margin-right: 20px;
+      backdrop-filter: blur(10px);
+      transition: all 0.3s ease;
+    }
+    
+    .back-btn:hover {
+      background: rgba(255, 255, 255, 0.3);
+      transform: translateX(-2px);
+    }
+    
+    .content-header h2 {
+      color: white;
+      margin: 0;
+      font-size: 24px;
+      font-weight: 500;
+    }
+    
+    .content-body {
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 20px;
+      padding: 30px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+      backdrop-filter: blur(10px);
+      /* 确保内容可以正常滚动 */
+      min-height: calc(100vh - 120px);
+      box-sizing: border-box;
+    }
+    
+    .contact-item, .faq-item, .privacy-section {
+      margin-bottom: 25px;
+      padding: 20px;
+      background: rgba(255, 255, 255, 0.8);
+      border-radius: 15px;
+      border-left: 4px solid #667eea;
+    }
+    
+    .contact-item i {
+      color: #667eea;
+      margin-right: 12px;
+      font-size: 18px;
+      width: 20px;
+    }
+    
+    .contact-item span {
+      color: #333;
+      font-size: 16px;
+    }
+    
+    .faq-item h3, .privacy-section h3 {
+      color: #667eea;
+      margin: 0 0 10px 0;
+      font-size: 18px;
+      font-weight: 600;
+    }
+    
+    .faq-item p, .privacy-section p {
+      color: #666;
+      margin: 0;
+      line-height: 1.6;
+      font-size: 15px;
+    }
+    
+    /* 隐私政策页面专用样式 */
+    .content-body h1 {
+      text-align: center;
+      font-size: 24px;
+      margin-bottom: 20px;
+      color: #2c3e50;
+      font-weight: 600;
+    }
+    
+    .content-body .date-info {
+      text-align: center;
+      margin-bottom: 30px;
+      color: #7f8c8d;
+      font-size: 14px;
+    }
+    
+    .content-body .date-info p {
+      margin-bottom: 5px;
+    }
+    
+    .content-body h2 {
+      font-size: 18px;
+      margin: 25px 0 15px;
+      color: #2c3e50;
+      font-weight: 600;
+      padding-bottom: 5px;
+      border-bottom: 1px solid #eee;
+    }
+    
+    .content-body h3 {
+      font-size: 16px;
+      margin: 20px 0 10px;
+      color: #34495e;
+      font-weight: 500;
+    }
+    
+    .content-body ul {
+      margin-bottom: 15px;
+      padding-left: 20px;
+    }
+    
+    .content-body li {
+      margin-bottom: 8px;
+      color: #666;
+      line-height: 1.6;
+    }
+    
+    .content-body .contact-info {
+      margin-top: 30px;
+      padding-top: 20px;
+      border-top: 1px solid #eee;
+    }
+    
+    .content-body .highlight {
+      font-weight: 500;
+      color: #e74c3c;
+    }
+    
+    .content-body a {
+      color: #667eea;
+      text-decoration: none;
+    }
+    
+    .content-body a:hover {
+      text-decoration: underline;
+    }
+    
+    /* 自定义滚动条样式 */
+    .content-page::-webkit-scrollbar {
+      width: 6px;
+    }
+    
+    .content-page::-webkit-scrollbar-track {
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 3px;
+    }
+    
+    .content-page::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.3);
+      border-radius: 3px;
+    }
+    
+    .content-page::-webkit-scrollbar-thumb:hover {
+      background: rgba(255, 255, 255, 0.5);
+    }
+    
+    /* 为移动设备优化滚动 */
+    @media (max-width: 768px) {
+      .content-page {
+        padding: 15px;
+      }
+      
+      .content-body {
+        padding: 20px;
+        min-height: calc(100vh - 100px);
+      }
+    }
+    
+    /* iPad适配 - 内容页面 */
+    @media only screen and (min-width: 768px) and (max-width: 1024px) {
+      .content-page {
+        padding: 30px;
+        max-width: 1024px;
+        margin: 0 auto;
+        left: 50%;
+        transform: translateX(-50%);
+      }
+      
+      .content-header h2 {
+        font-size: 28px;
+      }
+      
+      .content-body {
+        padding: 40px;
+      }
+      
+      .contact-item, .faq-item, .privacy-section {
+        padding: 25px;
+        margin-bottom: 30px;
+      }
+      
+      .contact-item span {
+        font-size: 18px;
+      }
+      
+      .faq-item h3, .privacy-section h3 {
+        font-size: 20px;
+      }
+      
+      .faq-item p, .privacy-section p {
+        font-size: 17px;
+      }
+      
+      /* 隐私政策页面平板适配 */
+      .content-body h1 {
+        font-size: 28px;
+        margin-bottom: 25px;
+      }
+      
+      .content-body h2 {
+        font-size: 22px;
+        margin: 30px 0 20px;
+      }
+      
+      .content-body h3 {
+        font-size: 19px;
+        margin: 25px 0 15px;
+      }
+      
+      .content-body p, .content-body li {
+        font-size: 17px;
+        line-height: 1.7;
+      }
+      
+      .content-body ul {
+        margin-bottom: 20px;
+        padding-left: 25px;
+      }
+    }
+  </style>
+  <!-- 引入阿里巴巴矢量图标库或FontAwesome等图标库 -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/font-awesome/css/font-awesome.min.css">
+</head>
+<body>
+  <div class="download-page">
+    <!-- 底部下载按钮区 -->
+    <div class="btn-group">
+      <button class="btn-android" onclick="handleAndroidDownload()">
+        <span class="icon"><i class="fa fa-android"></i></span>
+        <span class="text">Android下载</span>
+      </button>
+      <button class="btn-ios" disabled>
+        <span class="icon"><i class="fa fa-apple"></i></span>
+        <span class="text">即将上线</span>
+      </button>
+    </div>
+  </div>
+  
+  <!-- 新增入口按钮 - 放在download-page外部 -->
+  <div class="entry-group">
+    <button class="entry-btn" onclick="handleContact()">联系我们</button>
+    <button class="entry-btn" onclick="handleFAQ()">常见问题</button>
+    <button class="entry-btn" onclick="handlePrivacy()">隐私政策</button>
+  </div>
+  
+  <!-- 微信蒙层 -->
+  <div class="wechat-overlay" id="wechatOverlay">
+    <img src="https://img.aidomino360.com/download/mengceng.png" alt="点击右上角在浏览器中打开" style="position: absolute; top: 20%; left: 50%; transform: translate(-50%, -50%); max-width: 80%; max-height: 60%; width: auto; height: auto; z-index: 2;">
+  </div>
+  
+  <!-- 联系我们页面 -->
+  <div class="content-page" id="contactPage" style="display: none;">
+    <div class="content-header">
+      <button class="back-btn" onclick="showMainPage()">
+        <i class="fa fa-arrow-left"></i> 返回
+      </button>
+      <h2>联系我们</h2>
+    </div>
+    <div class="content-body">
+      <div class="contact-item">
+        <i class="fa fa-envelope"></i>
+        <span>邮箱：695787670@qq.com</span>
+      </div>
+      <div class="contact-item">
+        <i class="fa fa-phone"></i>
+        <span>电话：021-6330-9256</span>
+      </div>
+      <div class="contact-item">
+        <i class="fa fa-clock-o"></i>
+        <span>工作时间：周一至周五 9:00-18:00</span>
+      </div>
+      <div class="contact-item">
+        <i class="fa fa-map-marker"></i>
+        <span>地址：宁波市鄞州区南部商务区恒元大厦1801室</span>
+      </div>
+    </div>
+  </div>
+  
+  <!-- 常见问题页面 -->
+  <div class="content-page" id="faqPage" style="display: none;">
+    <div class="content-header">
+      <button class="back-btn" onclick="showMainPage()">
+        <i class="fa fa-arrow-left"></i> 返回
+      </button>
+      <h2>常见问题</h2>
+    </div>
+    <div class="content-body">
+      <div class="faq-item">
+        <h3>如何下载应用？</h3>
+        <p>点击页面上的"Android下载"按钮即可下载应用安装包。</p>
+      </div>
+      <div class="faq-item">
+        <h3>支持哪些设备？</h3>
+        <p>目前支持Android 6.0及以上版本的设备，iOS版本即将上线。</p>
+      </div>
+      <div class="faq-item">
+        <h3>如何获得技术支持？</h3>
+        <p>您可以通过联系我们页面中的邮箱或电话获得技术支持。</p>
+      </div>
+    </div>
+  </div>
+  
+  <!-- 隐私政策页面 -->
+  <div class="content-page" id="privacyPage" style="display: none;">
+    <div class="content-header">
+      <button class="back-btn" onclick="showMainPage()">
+        <i class="fa fa-arrow-left"></i> 返回
+      </button>
+      <h2>隐私政策</h2>
+    </div>
+    <div class="content-body">
+      <h1>福荟星球APP隐私政策</h1>
+      <div class="date-info">
+        <p>生效日期：<span class="highlight">2025年08月13日</span></p>
+        <p>更新日期：<span class="highlight">2025年0813日</span></p>
+      </div>
+      
+      <p>福荟数字科技（湖北）有限公司（以下简称"我们"）尊重并保护用户隐私。本政策旨在说明"福荟星球"APP如何收集、使用、存储、保护及处理您的个人信息。请仔细阅读本政策，<span class="highlight">使用本APP即视为您同意本政策的全部内容</span>。</p>
+      
+      <h2>一、个人信息收集范围</h2>
+      <h3>1. 基本信息</h3>
+      <ul>
+        <li>注册账号时需提供的姓名、手机号、电子邮箱等。</li>
+        <li>实名认证所需的身份证号（仅限特定功能，如支付或身份核验）。</li>
+      </ul>
+      
+      <h3>2. 设备与日志信息</h3>
+      <ul>
+        <li>设备型号、操作系统版本、IP地址、唯一设备标识符（如IMEI）。</li>
+        <li>操作记录（如浏览、点击行为）、崩溃日志等，用于优化服务稳定性。</li>
+      </ul>
+      
+      <h3>3. 位置信息</h3>
+      <ul>
+        <li>基于GPS或IP的粗略位置（需用户授权），用于地区化服务推荐或安全风控。</li>
+      </ul>
+      
+      <h3>4. 其他信息</h3>
+      <ul>
+        <li>用户主动提交的反馈内容、联系方式等客服记录。</li>
+      </ul>
+      
+      <h2>二、个人信息使用目的</h2>
+      <p>我们仅出于以下合法目的处理您的信息：</p>
+      <h3>1. 核心功能</h3>
+      <ul>
+        <li>账户注册、登录验证、交易支付等必要服务。</li>
+      </ul>
+      
+      <h3>2. 服务优化</h3>
+      <ul>
+        <li>分析用户行为数据以改进功能（如界面设计、加载速度）。</li>
+      </ul>
+      
+      <h3>3. 安全与合规</h3>
+      <ul>
+        <li>检测异常操作、防范欺诈行为，或响应法律要求（如配合司法机关调查）。</li>
+      </ul>
+      
+      <h2>三、个人信息共享与披露</h2>
+      <p>未经用户同意，我们不会向第三方共享信息，<span class="highlight">除以下情形</span>：</p>
+      <h3>1. 授权合作伙伴</h3>
+      <ul>
+        <li>物流、支付等必要服务提供商（如支付宝、微信支付），且需其签署保密协议。</li>
+      </ul>
+      
+      <h3>2. 法律义务</h3>
+      <ul>
+        <li>应政府部门、司法机构要求依法披露。</li>
+      </ul>
+      
+      <h3>3. 企业变动</h3>
+      <ul>
+        <li>如发生合并、收购，我们将通知用户并确保数据延续性保护。</li>
+      </ul>
+      
+      <h2>四、用户权利与选择</h2>
+      <p>您享有以下权利：</p>
+      <h3>1. 访问与更正</h3>
+      <ul>
+        <li>通过"账户设置"查看或修改个人信息。</li>
+      </ul>
+      
+      <h3>2. 删除与注销</h3>
+      <ul>
+        <li>申请删除非必要信息或注销账号（注销后数据将匿名化处理）。</li>
+      </ul>
+      
+      <h3>3. 撤回授权</h3>
+      <ul>
+        <li>关闭位置、相机等权限（部分功能可能受限）。</li>
+      </ul>
+      
+      <h2>五、数据安全措施</h2>
+      <p>我们采取严格技术与管理措施保障信息安全：</p>
+      <h3>1. 加密存储</h3>
+      <ul>
+        <li>敏感信息（如密码、身份证号）使用AES-256加密。</li>
+      </ul>
+      
+      <h3>2. 访问控制</h3>
+      <ul>
+        <li>仅限授权员工在最小必要范围内访问数据。</li>
+      </ul>
+      
+      <h3>3. 应急响应</h3>
+      <ul>
+        <li>发生数据泄露时，72小时内启动预案并通知受影响用户。</li>
+      </ul>
+      
+      <h2>六、政策更新与争议解决</h2>
+      <h3>1. 更新通知</h3>
+      <ul>
+        <li>重大变更将通过APP弹窗或邮件告知，更新后继续使用视为接受新政策。</li>
+      </ul>
+      
+      <h3>2. 争议处理</h3>
+      <ul>
+        <li>争议优先协商解决，协商不成可向福荟数字科技所在地（湖北省）法院提起诉讼。</li>
+      </ul>
+      
+      <div class="contact-info">
+        <h2>联系我们</h2>
+        <p>如有疑问，请通过以下方式联系隐私保护负责人：</p>
+        <ul>
+          <li>邮箱：<a href="mailto:fullworld131@126.com">fullworld131@126.com</a></li>
+        </ul>
+      </div>
+      
+      <h2>附：儿童隐私保护特别说明</h2>
+      <p>若用户未满14周岁，需监护人同意后方可使用服务。我们不会故意收集儿童信息，发现误收集时将立即删除。</p>
+    </div>
+  </div>
+  
+</body>
+<script>
+  // 检测是否为微信环境
+  function isWeChat() {
+    var ua = navigator.userAgent.toLowerCase();
+    console.log('User Agent:', ua);
+    
+    // 多种微信检测方法
+    var isWechat = ua.indexOf('micromessenger') !== -1 || 
+                   ua.indexOf('wechat') !== -1 ||
+                   /micromessenger/i.test(ua);
+    
+    console.log('Is WeChat:', isWechat);
+    return isWechat;
+  }
+  
+  // 显示蒙层
+  function showWechatOverlay() {
+    var overlay = document.getElementById('wechatOverlay');
+    if (overlay) {
+      // 多重显示方法
+      overlay.style.display = 'block';
+      overlay.style.opacity = '1';
+      overlay.style.visibility = 'visible';
+      overlay.classList.add('show');
+      overlay.classList.add('visible');
+      
+      // 强制重绘
+      overlay.offsetHeight;
+      
+      console.log('蒙层已显示');
+      console.log('蒙层元素:', overlay);
+      console.log('蒙层样式:', overlay.style.display, overlay.style.opacity, overlay.style.visibility);
+    } else {
+      console.log('蒙层元素未找到');
+    }
+  }
+  
+  // 强制显示蒙层（用于测试）
+  function forceShowOverlay() {
+    var overlay = document.getElementById('wechatOverlay');
+    if (overlay) {
+      overlay.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: url("https://img.aidomino360.com/download/mengceng.png") no-repeat center center; background-size: 80% auto; background-color: rgba(0,0,0,0.9); z-index: 99999; display: block !important; opacity: 1 !important; visibility: visible !important;';
+      console.log('强制显示蒙层');
+    }
+  }
+  
+  window.onload = function() {
+    window.scrollTo(0, 50);
+    
+    // 只在主页面禁止滚动
+    function preventScroll(e) {
+      // 如果当前显示的是内容页面，允许滚动
+      if (document.getElementById('contactPage').style.display === 'block' ||
+          document.getElementById('faqPage').style.display === 'block' ||
+          document.getElementById('privacyPage').style.display === 'block') {
+        return;
+      }
+      // 主页面禁止滚动
+      e.preventDefault();
+    }
+    
+    document.body.addEventListener('touchmove', preventScroll, { passive: false });
+    document.body.addEventListener('wheel', preventScroll, { passive: false });
+    
+    console.log('页面加载完成');
+  }
+  
+  // 移除自动检测和显示蒙层的代码
+  
+  // Android下载按钮点击处理
+  function handleAndroidDownload() {
+    if (isWeChat()) {
+      // 微信环境下显示蒙层
+      console.log('微信环境下点击Android下载，显示蒙层');
+      showWechatOverlay();
+    } else {
+      // 非微信环境下直接下载
+      console.log('非微信环境下点击Android下载，直接下载');
+      window.location.href = 'https://img.aidomino360.com/download/fhxq_1.0.apk';
+    }
+  }
+  
+  // 测试按钮事件
+  document.addEventListener('DOMContentLoaded', function() {
+    var testBtn = document.getElementById('testOverlay');
+    if (testBtn) {
+      testBtn.addEventListener('click', function() {
+        console.log('测试按钮被点击');
+        showWechatOverlay();
+        // 3秒后隐藏测试按钮
+        setTimeout(function() {
+          testBtn.style.display = 'none';
+        }, 3000);
+      });
+    }
+  });
+  
+  // 新增入口按钮处理函数
+  function handleContact() {
+    // 隐藏主页面，显示联系我们页面
+    document.querySelector('.download-page').style.display = 'none';
+    document.querySelector('.btn-group').style.display = 'none';
+    document.querySelector('.entry-group').style.display = 'none';
+    document.getElementById('contactPage').style.display = 'block';
+  }
+  
+  function handleFAQ() {
+    // 隐藏主页面，显示常见问题页面
+    document.querySelector('.download-page').style.display = 'none';
+    document.querySelector('.btn-group').style.display = 'none';
+    document.querySelector('.entry-group').style.display = 'none';
+    document.getElementById('faqPage').style.display = 'block';
+  }
+  
+  function handlePrivacy() {
+    // 隐藏主页面，显示隐私政策页面
+    document.querySelector('.download-page').style.display = 'none';
+    document.querySelector('.btn-group').style.display = 'none';
+    document.querySelector('.entry-group').style.display = 'none';
+    document.getElementById('privacyPage').style.display = 'block';
+  }
+  
+  // 返回主页面函数
+  function showMainPage() {
+    // 隐藏所有内容页面
+    document.getElementById('contactPage').style.display = 'none';
+    document.getElementById('faqPage').style.display = 'none';
+    document.getElementById('privacyPage').style.display = 'none';
+    
+    // 显示主页面
+    document.querySelector('.download-page').style.display = 'block';
+    document.querySelector('.btn-group').style.display = 'flex';
+    document.querySelector('.entry-group').style.display = 'flex';
+  }
+</script>
+</html>
