@@ -1,0 +1,564 @@
+﻿<template>
+	<view class="recharge-page">
+		
+		<!-- 顶部导航��?-->
+		<NavBar title="充��? />
+		
+		<!-- 钱包连接状态提��?-->
+		<view v-if="!walletConnected" class="connection-notice">
+			<text class="notice-text">钱包未连��?/text>
+			<button class="connect-btn" @click="goToConnect">连接钱包</button>
+		</view>
+		
+		<!-- 主要内容区域 -->
+		<view class="main-content">
+			<!-- 输入提示 -->
+			<view class="input-section">
+				<text class="input-label">请填写数��?/text>
+				<view class="amount-input">
+					<text class="currency-symbol">$</text>
+					<input 
+						class="amount-field" 
+						type="number" 
+						v-model="rechargeAmount" 
+						placeholder="0.00"
+						@input="onAmountInput"
+					/>
+				</view>
+				<view class="input-line"></view>
+			</view>
+			
+			<!-- 当前余额 -->
+			<view class="balance-info">
+				<text class="balance-text">当前余额: {{ currentBalance }}</text>
+			</view>
+			
+			<!-- 最低金额提��?-->
+			<view class="min-amount-notice">
+				<text class="notice-text">*最��?0��?/text>
+			</view>
+			
+			<!-- 预设金额按钮 -->
+			<view class="preset-amounts">
+				<view 
+					class="preset-btn" 
+					v-for="amount in presetAmounts" 
+					:key="amount"
+					:class="{ active: rechargeAmount == amount }"
+					@click="selectPresetAmount(amount)"
+				>
+					<text class="preset-text">{{ amount }}</text>
+				</view>
+			</view>
+			
+			<!-- 充值按��?-->
+			<view class="recharge-section">
+				<image 
+					class="recharge-btn" 
+					src="../../static/chongzhi.png" 
+					@click="handleRecharge" 
+					:class="{ disabled: !canRecharge }"
+				></image>
+			</view>
+		</view>
+	</view>
+</template>
+
+<script>
+import NavBar from '../../components/NavBar.vue';
+import walletManager from '../../utils/wallet-manager.js';
+import { getRechargeContractConfig, getCurrentNetwork } from '../../config/contracts.js';
+
+export default {
+	name: 'Recharge',
+	components: {
+		NavBar
+	},
+	data() {
+		return {
+			rechargeAmount: '',
+			currentBalance: 0,
+			presetAmounts: [10, 30, 50, 100, 200],
+			walletConnected: false,
+			walletAddress: '',
+			contractConfig: null,
+			currentNetwork: 'TESTNET'
+		}
+	},
+	computed: {
+		canRecharge() {
+			const amount = parseFloat(this.rechargeAmount);
+			return amount >= 10 && amount > 0 && this.walletConnected;
+		}
+	},
+	onLoad() {
+		this.initContractConfig();
+		this.checkWalletStatus();
+	},
+	onShow() {
+		this.checkWalletStatus();
+	},
+	methods: {
+		// 初始化合约配��?		initContractConfig() {
+			try {
+				this.currentNetwork = getCurrentNetwork();
+				this.contractConfig = getRechargeContractConfig();
+				console.log('合约配置初始��?', this.contractConfig);
+			} catch (error) {
+				console.error('初始化合约配置失��?', error);
+				uni.showToast({
+					title: '合约配置初始化失��?,
+					icon: 'none'
+				});
+			}
+		},
+		// 检查钱包状��?		async checkWalletStatus() {
+			try {
+				const networkInfo = await walletManager.getNetworkInfo();
+				console.log('充值页面检查钱包状��?', networkInfo);
+				
+				if (networkInfo.isConnected && networkInfo.account) {
+					this.walletConnected = true;
+					this.walletAddress = networkInfo.account;
+					// 加载余额
+					await this.loadCurrentBalance();
+				} else {
+					this.walletConnected = false;
+					this.walletAddress = '';
+					this.currentBalance = 0;
+				}
+			} catch (error) {
+				console.error('检查钱包状态失��?', error);
+				this.walletConnected = false;
+				this.walletAddress = '';
+				this.currentBalance = 0;
+			}
+		},
+		
+		// 加载当前余额
+		async loadCurrentBalance() {
+			try {
+				if (!this.walletConnected) {
+					this.currentBalance = 0;
+					return;
+				}
+				
+				const result = await walletManager.getBalance(this.walletAddress);
+				if (result.success) {
+					this.currentBalance = result.balance;
+					console.log('余额加载成功:', this.currentBalance);
+				} else {
+					console.warn('余额加载失败:', result.error);
+					this.currentBalance = 0;
+				}
+			} catch (error) {
+				console.error('加载余额失败:', error);
+				this.currentBalance = 0;
+			}
+		},
+		
+		// 选择预设金额
+		selectPresetAmount(amount) {
+			this.rechargeAmount = amount.toString();
+		},
+		
+		// 金额输入处理
+		onAmountInput(e) {
+			const value = e.detail.value;
+			// 限制只能输入数字和小数点
+			this.rechargeAmount = value.replace(/[^\d.]/g, '');
+		},
+		
+		// 处理充��?		handleRecharge() {
+			if (!this.walletConnected) {
+				uni.showToast({
+					title: '请先连接钱包',
+					icon: 'none'
+				});
+				return;
+			}
+			
+			if (!this.canRecharge) {
+				uni.showToast({
+					title: '请输入有效金额（最��?0��?,
+					icon: 'none'
+				});
+				return;
+			}
+			
+			const amount = parseFloat(this.rechargeAmount);
+			uni.showModal({
+				title: '确认充��?,
+				content: `确认充��?${amount} TRX 吗？\n\n注意：充值将通过区块链交易进行，请确保网络稳定。`,
+				success: (res) => {
+                console.log(res);
+					if (res.confirm) {
+						this.processRecharge(amount);
+					}
+				}
+			});
+		},
+		
+		// 执行充值（通过智能合约��?		async processRecharge(amount) {
+			uni.showLoading({
+				title: '充值中...'
+			});
+			
+			try {
+				// 检查钱包服务状��?				if (!walletManager.currentService) {
+					throw new Error('钱包服务未初始化，请重新连接钱包');
+				}
+				
+				// 检查钱包连接状��?				const networkInfo = await walletManager.getNetworkInfo();
+				if (!networkInfo.isConnected || !networkInfo.account) {
+					throw new Error('钱包未连接，请先连接钱包');
+				}
+				
+				// 检查合约配��?				if (!this.contractConfig || !this.contractConfig.address) {
+					throw new Error('充值合约未配置，请联系管理��?);
+				}
+				
+				console.log('开始充值流程，金额:', amount, 'TRX');
+				console.log('使用合约:', this.contractConfig.address);
+				console.log('当前网络:', this.currentNetwork);
+				
+				// 调用智能合约进行充��?				const result = await this.callRechargeContract(amount);
+				
+				if (result.success) {
+					// 充值成��?					uni.hideLoading();
+					uni.showToast({
+						title: '充值成��?,
+						icon: 'success'
+					});
+					
+					// 清空输入��?					this.rechargeAmount = '';
+					
+					// 更新余额
+					await this.loadCurrentBalance();
+					
+					// 显示成功信息
+					setTimeout(() => {
+						uni.showModal({
+							title: '充值成��?,
+							content: `成功充��?${amount} TRX\n\n交易哈希: ${result.txHash}\n\n网络: ${this.contractConfig.networkName}\n\n余额已更新`,
+							showCancel: false,
+							success: () => {
+								// 可以选择返回上一��?								// uni.navigateBack();
+							}
+						});
+					}, 1000);
+					
+				} else {
+					throw new Error(result.error || '充值失��?);
+				}
+				
+			} catch (error) {
+				uni.hideLoading();
+				uni.showToast({
+					title: error.message || '充值失败，请重��?,
+					icon: 'none'
+				});
+				console.error('充值失��?', error);
+			}
+		},
+		
+		// 调用充值合��?		async callRechargeContract(amount) {
+			try {
+				console.log('调用充值合约开��?);
+				
+				// 构建合约调用数据
+				const contractData = this.buildContractCallData(amount);
+				
+				// 发送交易到合约
+				const result = await walletManager.sendTransaction(
+					this.contractConfig.address,
+					amount * 1000000 // TRX转换为sun单位
+				);
+				
+				console.log('合约调用结果:', result);
+				
+				if (result.success) {
+					return {
+						success: true,
+						txHash: result.txId || result.txHash,
+						message: '充值合约调用成��?
+					};
+				} else {
+					return {
+						success: false,
+						error: result.error || '合约调用失败'
+					};
+				}
+				
+			} catch (error) {
+				console.error('调用充值合约失��?', error);
+				return {
+					success: false,
+					error: error.message || '合约调用失败'
+				};
+			}
+		},
+		
+		// 构建合约调用数据
+		buildContractCallData(amount) {
+			try {
+				// 这里应该根据合约ABI构建正确的调用数��?				// 由于TRON网络的特殊性，可能需要使用tronWeb或其他方��?				
+				// 示例：构建充值方法的调用数据
+				const methodSignature = 'recharge(uint256)';
+				const amountHex = '0x' + (amount * 1000000).toString(16).padStart(64, '0');
+				
+				console.log('构建合约调用数据:', {
+					method: methodSignature,
+					amount: amount,
+					amountHex: amountHex
+				});
+				
+				return {
+					method: methodSignature,
+					params: [amountHex]
+				};
+				
+			} catch (error) {
+				console.error('构建合约调用数据失败:', error);
+				throw new Error('合约调用数据构建失败');
+			}
+		},
+		
+		// 跳转到连接钱包页��?		goToConnect() {
+			// 直接在当前页面连接钱��?			this.connectWallet();
+		},
+		
+		// 连接钱包
+		async connectWallet() {
+			console.log('开始连接钱��?);
+			try {
+				uni.showLoading({
+					title: '连接��?..'
+				});
+				
+				// 调试：检查钱包管理器状��?				console.log('钱包管理器状��?', {
+					currentService: walletManager.currentService,
+					serviceType: walletManager.serviceType,
+					isConnected: walletManager.isConnected
+				});
+				
+				const result = await walletManager.connectWallet();
+				
+				uni.hideLoading();
+				
+				if (result.success) {
+					uni.showToast({
+						title: '钱包连接成功',
+						icon: 'success'
+					});
+					
+					// 重新检查钱包状��?					await this.checkWalletStatus();
+					
+					// 调试：连接后的状��?					console.log('连接后钱包管理器状��?', {
+						currentService: walletManager.currentService,
+						serviceType: walletManager.serviceType,
+						isConnected: walletManager.isConnected
+					});
+					
+				} else {
+					uni.showToast({
+						title: result.error || '连接失败',
+						icon: 'none'
+					});
+					
+					// 如果有建议信息，显示更详细的提示
+					if (result.suggestions) {
+						setTimeout(() => {
+							uni.showModal({
+								title: '连接失败',
+								content: result.suggestions,
+								showCancel: false
+							});
+						}, 1000);
+					}
+				}
+				
+			} catch (error) {
+				uni.hideLoading();
+				console.error('连接钱包失败:', error);
+				uni.showToast({
+					title: '连接失败，请重试',
+					icon: 'none'
+				});
+			}
+		}
+	}
+}
+</script>
+
+<style scoped>
+.recharge-page {
+	min-height: 100vh;
+	background-image: url('../../static/back.png');
+	background-size: cover;
+	background-position: center;
+	background-repeat: no-repeat;
+	color: white;
+	font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.main-content {
+	padding: 60rpx 40rpx;
+}
+
+.input-section {
+	margin-bottom: 40rpx;
+}
+
+.input-label {
+	display: block;
+	font-size: 28rpx;
+	color: white;
+	margin-bottom: 30rpx;
+}
+
+.amount-input {
+	display: flex;
+	align-items: center;
+	margin-bottom: 20rpx;
+}
+
+.currency-symbol {
+	font-size: 48rpx;
+	color: white;
+	font-weight: bold;
+	margin-right: 20rpx;
+}
+
+.amount-field {
+	flex: 1;
+	font-size: 48rpx;
+	color: white;
+	font-weight: bold;
+	background: transparent;
+	border: none;
+	outline: none;
+}
+
+.input-line {
+	height: 2rpx;
+	background: white;
+	width: 100%;
+}
+
+.balance-info {
+	margin-bottom: 30rpx;
+}
+
+.balance-text {
+	font-size: 28rpx;
+	color: white;
+}
+
+.min-amount-notice {
+	margin-bottom: 50rpx;
+}
+
+.notice-text {
+	font-size: 24rpx;
+	color: rgba(255, 255, 255, 0.7);
+}
+
+.preset-amounts {
+	display: flex;
+	gap: 20rpx;
+	margin-bottom: 60rpx;
+	flex-wrap: wrap;
+}
+
+.preset-btn {
+	background: rgba(0, 0, 0, 0.5);
+	border: 2rpx solid #ff6b6b;
+	border-radius: 15rpx;
+	padding: 20rpx 30rpx;
+	position: relative;
+	transition: all 0.3s ease;
+}
+
+.preset-btn::before {
+	content: '';
+	position: absolute;
+	top: 8rpx;
+	right: 8rpx;
+	width: 8rpx;
+	height: 8rpx;
+	background: #ff6b6b;
+	border-radius: 50%;
+}
+
+.preset-btn.active {
+	background: #ff6b6b;
+	border-color: #ff6b6b;
+}
+
+.preset-text {
+	font-size: 28rpx;
+	color: white;
+	font-weight: bold;
+}
+
+.recharge-section {
+	display: flex;
+	justify-content: center;
+}
+
+.recharge-btn {
+	width: 400rpx;
+	height: 150rpx;
+	border-radius: 50%;
+	overflow: hidden;
+	box-shadow: 0 8rpx 20rpx rgba(255, 107, 107, 0.3);
+	transition: all 0.3s ease;
+	cursor: pointer;
+}
+
+.recharge-btn:active {
+	transform: scale(0.95);
+}
+
+.recharge-btn.disabled {
+	opacity: 0.5;
+	filter: grayscale(100%);
+	pointer-events: none;
+}
+
+.connection-notice {
+	background: rgba(255, 107, 107, 0.2);
+	border: 1rpx solid rgba(255, 107, 107, 0.5);
+	border-radius: 15rpx;
+	margin: 20rpx 40rpx;
+	padding: 30rpx;
+	text-align: center;
+	backdrop-filter: blur(10rpx);
+}
+
+.notice-text {
+	display: block;
+	color: #ff6b6b;
+	font-size: 26rpx;
+	font-weight: bold;
+	margin-bottom: 20rpx;
+}
+
+.connect-btn {
+	background: linear-gradient(45deg, #ff6b6b, #ff8e8e);
+	border: none;
+	border-radius: 12rpx;
+	color: white;
+	font-size: 24rpx;
+	font-weight: bold;
+	padding: 15rpx 30rpx;
+	box-shadow: 0 4rpx 12rpx rgba(255, 107, 107, 0.3);
+	transition: all 0.3s ease;
+}
+
+.connect-btn:active {
+	transform: scale(0.95);
+	opacity: 0.8;
+}
+</style>

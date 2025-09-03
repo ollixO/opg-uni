@@ -1,4 +1,6 @@
-// TP钱包服务模块
+﻿// TP钱包服务模块
+import { getUSDTContractConfig, getUSDTContractByChainId } from '../config/contracts.js';
+
 class TPWalletH5Service {
   constructor() {
     this.isConnected = false;
@@ -10,37 +12,55 @@ class TPWalletH5Service {
 
   // 验证地址是否有效（支持多种网络）
   isValidAddress(address) {
-    if (!address || typeof address !== 'string') return false;
+    if (!address || typeof address !== 'string') {
+      console.log('地址验证失败：地址为空或不是字符串', address);
+      return false;
+    }
+    
+    const trimmedAddress = address.trim();
+    console.log('验证地址:', trimmedAddress, '长度:', trimmedAddress.length);
     
     // TRON地址：34个字符的base58字符串，以T开头
-    if (address.length === 34 && address.startsWith('T')) {
+    if (trimmedAddress.length === 34 && trimmedAddress.startsWith('T')) {
+      console.log('验证为TRON地址');
       return true;
     }
     
     // TRON hex地址：42个字符，以41开头
-    if (address.length === 42 && address.startsWith('41')) {
+    if (trimmedAddress.length === 42 && trimmedAddress.startsWith('41')) {
+      console.log('验证为TRON hex地址');
       return true;
     }
     
     // BSC/ETH地址：42个字符，以0x开头
-    if (address.length === 42 && address.startsWith('0x')) {
+    if (trimmedAddress.length === 42 && trimmedAddress.startsWith('0x')) {
+      console.log('验证为ETH/BSC地址');
       return true;
     }
     
+    console.log('地址验证失败：不匹配任何已知格式');
     return false;
   }
 
-  // 提取有效的地址字符串
+  // 提取有效的地址字符
   extractAddress(addressInput) {
-    if (!addressInput) return null;
+    console.log('开始提取地址，输入:', addressInput, '类型:', typeof addressInput);
+    
+    if (!addressInput) {
+      console.log('地址输入为空');
+      return null;
+    }
     
     // 如果是字符串，验证后返回
     if (typeof addressInput === 'string') {
       const trimmed = addressInput.trim();
-      // 检查是否是有效的TRON地址
+      console.log('字符串地址，trim后:', trimmed);
+      // 检查是否是有效的地址
       if (this.isValidAddress(trimmed)) {
+        console.log('字符串地址验证通过');
         return trimmed;
       }
+      console.log('字符串地址验证失败');
       return null;
     }
     
@@ -142,7 +162,7 @@ class TPWalletH5Service {
         if (networkVersion === '56') return 'BSC';
         if (networkVersion === '10') return 'OPTIMISM';
         if (networkVersion === '1') return 'ETH'; // 优先识别为ETH
-        return `UNKNOWN_${networkVersion}`;
+        return UNKNOWN_;
       }
       
       // 检查chainId
@@ -151,7 +171,7 @@ class TPWalletH5Service {
         if (chainId === '56' || chainId === '0x38') return 'BSC';
         if (chainId === '10' || chainId === '0xA') return 'OPTIMISM';
         if (chainId === '1' || chainId === '0x1') return 'ETH'; // 优先识别为ETH
-        return `UNKNOWN_${chainId}`;
+        return UNKNOWN_;
       }
       
       return 'TOKENPOCKET_MOBILE';
@@ -181,108 +201,6 @@ class TPWalletH5Service {
     return 'UNKNOWN';
   }
 
-  // 专门处理TP钱包地址获取的方法
-  async getTPWalletAddress(provider) {
-    try {
-      // 方法1：尝试request方法
-      if (provider.request) {
-        try {
-          const result = await provider.request({ method: 'tron_requestAccounts' });
-          if (result && Array.isArray(result) && result.length > 0) {
-            const address = this.extractAddress(result[0]);
-            if (address) return address;
-          }
-        } catch (error) {
-          console.warn('tron_requestAccounts失败:', error);
-        }
-      }
-
-      // 方法2：尝试getAccounts方法
-      if (provider.getAccounts) {
-        try {
-          const result = await provider.getAccounts();
-          if (result && Array.isArray(result) && result.length > 0) {
-            const address = this.extractAddress(result[0]);
-            if (address) return address;
-          }
-        } catch (error) {
-          console.warn('getAccounts失败:', error);
-        }
-      }
-
-      // 方法3：检查defaultAddress
-      if (provider.defaultAddress) {
-        const defaultAddr = provider.defaultAddress;
-        if (defaultAddr.base58 && defaultAddr.base58 !== false && typeof defaultAddr.base58 === 'string') {
-          return defaultAddr.base58;
-        }
-        if (defaultAddr.hex && defaultAddr.hex !== false && typeof defaultAddr.hex === 'string') {
-          return defaultAddr.hex;
-        }
-        if (defaultAddr.toString && typeof defaultAddr.toString === 'function') {
-          try {
-            const addrStr = defaultAddr.toString();
-            if (addrStr && typeof addrStr === 'string' && addrStr.length > 10) {
-              return addrStr;
-            }
-          } catch (e) {
-            console.warn('defaultAddress.toString失败:', e);
-          }
-        }
-      }
-
-      // 方法4：检查address属性
-      if (provider.address) {
-        const addr = provider.address;
-        if (typeof addr === 'string' && addr.length > 10) {
-          return addr;
-        }
-        if (typeof addr === 'object' && addr) {
-          if (addr.base58 && addr.base58 !== false) {
-            return addr.base58;
-          }
-          if (addr.hex && addr.hex !== false) {
-            return addr.hex;
-          }
-          if (addr.toString && typeof addr.toString === 'function') {
-            try {
-              const addrStr = addr.toString();
-              if (addrStr && typeof addrStr === 'string' && addrStr.length > 10) {
-                return addrStr;
-              }
-            } catch (e) {
-              console.warn('address.toString失败:', e);
-            }
-          }
-        }
-      }
-
-      // 方法5：尝试enable方法
-      if (provider.enable) {
-        try {
-          await provider.enable();
-          // 重新检查地址
-          if (provider.defaultAddress) {
-            const enabledAddr = provider.defaultAddress;
-            if (enabledAddr.base58 && enabledAddr.base58 !== false && typeof enabledAddr.base58 === 'string') {
-              return enabledAddr.base58;
-            }
-            if (enabledAddr.hex && enabledAddr.hex !== false && typeof enabledAddr.hex === 'string') {
-              return enabledAddr.hex;
-            }
-          }
-        } catch (error) {
-          console.warn('enable方法失败:', error);
-        }
-      }
-
-      return null;
-    } catch (error) {
-      console.error('获取TP钱包地址时出错:', error);
-      return null;
-    }
-  }
-
   async connectWallet() {
     if (!this.isH5) throw new Error('当前环境不支持H5钱包连接');
     
@@ -303,39 +221,7 @@ class TPWalletH5Service {
         provider = window.tronWeb;
         console.log('检测到桌面端TP钱包 (tronWeb)');
       } else {
-        // 检查是否在TokenPocket环境中但钱包对象未正确初始化
-        const userAgent = navigator.userAgent.toLowerCase();
-        if (userAgent.includes('tokenpocket') || userAgent.includes('tp')) {
-          console.log('检测到TokenPocket环境，但钱包对象未初始化');
-          console.log('User-Agent:', navigator.userAgent);
-          console.log('可用的全局对象:', Object.keys(window).filter(key => 
-            key.toLowerCase().includes('tron') || 
-            key.toLowerCase().includes('eth') || 
-            key.toLowerCase().includes('tp')
-          ));
-          
-          // 尝试等待钱包初始化
-          await new Promise(resolve => setTimeout(resolve, 3000));
-          
-          // 重新检查
-          if (window.ethereum && window.ethereum.isTokenPocket) {
-            provider = window.ethereum;
-            console.log('等待后检测到移动端TokenPocket (ethereum)');
-          } else if (window.TronLink && window.TronLink.isTokenPocket) {
-            provider = window.TronLink;
-            console.log('等待后检测到移动端TokenPocket (TronLink)');
-          } else if (window.tronLink && window.tronLink.ready) {
-            provider = window.tronLink;
-            console.log('等待后检测到桌面端TP钱包 (tronLink)');
-          } else if (window.tronWeb) {
-            provider = window.tronWeb;
-            console.log('等待后检测到桌面端TP钱包 (tronWeb)');
-          } else {
-            throw new Error('未检测到TP钱包，请确保在TokenPocket浏览器中打开');
-          }
-        } else {
-          throw new Error('未检测到TP钱包');
-        }
+        throw new Error('未检测到TP钱包');
       }
 
       console.log('开始连接钱包，provider:', provider);
@@ -354,99 +240,6 @@ class TPWalletH5Service {
           console.warn('enable方法失败:', error);
         }
       }
-      
-              // 尝试TP钱包特有的初始化方法
-        if (networkType === 'TRON') {
-          // 尝试调用TP钱包的ready方法
-          if (provider.ready && typeof provider.ready === 'function') {
-            try {
-              console.log('尝试调用TP钱包的ready方法...');
-              await provider.ready();
-              console.log('TP钱包ready方法调用成功');
-            } catch (error) {
-              console.warn('TP钱包ready方法失败:', error);
-            }
-          }
-          
-          // 尝试调用TP钱包的init方法
-          if (provider.init && typeof provider.init === 'function') {
-            try {
-              console.log('尝试调用TP钱包的init方法...');
-              await provider.init();
-              console.log('TP钱包init方法调用成功');
-            } catch (error) {
-              console.warn('TP钱包init方法失败:', error);
-            }
-          }
-          
-          // 尝试调用TP钱包的initDefaultAddress方法
-          if (provider.initDefaultAddress && typeof provider.initDefaultAddress === 'function') {
-            try {
-              console.log('尝试调用TP钱包的initDefaultAddress方法...');
-              await provider.initDefaultAddress();
-              console.log('TP钱包initDefaultAddress方法调用成功');
-              
-              // 等待一下让地址初始化完成
-              await new Promise(resolve => setTimeout(resolve, 1000));
-              
-              // 重新检查defaultAddress
-              if (provider.defaultAddress) {
-                console.log('initDefaultAddress后的defaultAddress:', provider.defaultAddress);
-                const defaultAddr = provider.defaultAddress;
-                if (defaultAddr.base58 && defaultAddr.base58 !== false && typeof defaultAddr.base58 === 'string') {
-                  finalAddress = defaultAddr.base58;
-                  console.log('initDefaultAddress后从defaultAddress.base58获取到地址:', finalAddress);
-                } else if (defaultAddr.hex && defaultAddr.hex !== false && typeof defaultAddr.hex === 'string') {
-                  finalAddress = defaultAddr.hex;
-                  console.log('initDefaultAddress后从defaultAddress.hex获取到地址:', finalAddress);
-                }
-              }
-            } catch (error) {
-              console.warn('TP钱包initDefaultAddress方法失败:', error);
-            }
-          }
-        }
-        
-        // 尝试移动端TokenPocket的初始化方法
-        if (networkType === 'TOKENPOCKET_MOBILE') {
-          console.log('尝试移动端TokenPocket的初始化...');
-          
-          // 移动端TokenPocket通常需要等待用户授权
-          if (provider.request) {
-            try {
-              console.log('尝试请求移动端TokenPocket权限...');
-              const accounts = await provider.request({ method: 'eth_requestAccounts' });
-              console.log('移动端TokenPocket权限请求结果:', accounts);
-              
-              if (accounts && Array.isArray(accounts) && accounts.length > 0) {
-                finalAddress = this.extractAddress(accounts[0]);
-                if (finalAddress) {
-                  console.log('从移动端TokenPocket获取到地址:', finalAddress);
-                }
-              }
-            } catch (error) {
-              console.warn('移动端TokenPocket权限请求失败:', error);
-            }
-          }
-          
-          // 尝试获取已授权的账户
-          if (!finalAddress && provider.request) {
-            try {
-              console.log('尝试获取已授权的账户...');
-              const accounts = await provider.request({ method: 'eth_accounts' });
-              console.log('已授权的账户:', accounts);
-              
-              if (accounts && Array.isArray(accounts) && accounts.length > 0) {
-                finalAddress = this.extractAddress(accounts[0]);
-                if (finalAddress) {
-                  console.log('从已授权账户获取到地址:', finalAddress);
-                }
-              }
-            } catch (error) {
-              console.warn('获取已授权账户失败:', error);
-            }
-          }
-        }
       
       // 等待一下让钱包初始化
       await new Promise(resolve => setTimeout(resolve, 2000));
@@ -481,35 +274,18 @@ class TPWalletH5Service {
       
       // 方法2：尝试getAccounts方法
       if (!finalAddress && provider.getAccounts) {
-          try {
-            console.log('尝试使用getAccounts方法...');
-            const result = await provider.getAccounts();
-            console.log('getAccounts方法返回:', result);
+        try {
+          console.log('尝试使用getAccounts方法...');
+          const result = await provider.getAccounts();
+          console.log('getAccounts方法返回:', result);
           if (result && Array.isArray(result) && result.length > 0) {
             finalAddress = this.extractAddress(result[0]);
             if (finalAddress) {
               console.log('从getAccounts方法获取到地址:', finalAddress);
             }
-            }
-          } catch (error) {
-            console.warn('getAccounts方法失败:', error);
-          }
-      }
-      
-      // 方法2.5：对于BSC/ETH网络，尝试eth_accounts方法
-      if (!finalAddress && (networkType === 'BSC' || networkType === 'ETH') && provider.request) {
-        try {
-          console.log('尝试使用eth_accounts方法...');
-          const result = await provider.request({ method: 'eth_accounts' });
-          console.log('eth_accounts方法返回:', result);
-          if (result && Array.isArray(result) && result.length > 0) {
-            finalAddress = this.extractAddress(result[0]);
-            if (finalAddress) {
-              console.log('从eth_accounts方法获取到地址:', finalAddress);
-            }
           }
         } catch (error) {
-          console.warn('eth_accounts方法失败:', error);
+          console.warn('getAccounts方法失败:', error);
         }
       }
       
@@ -537,72 +313,6 @@ class TPWalletH5Service {
             }
           } catch (e) {
             console.warn('defaultAddress.toString调用失败:', e);
-          }
-        }
-        
-        // 如果defaultAddress是对象但值为false，或者toString返回无效值，尝试强制获取
-        if (!finalAddress && typeof defaultAddr === 'object' && 
-            (defaultAddr.base58 === false || defaultAddr.hex === false || 
-             (defaultAddr.toString && defaultAddr.toString() === '[object Object]'))) {
-          console.log('defaultAddress值无效，尝试强制获取...');
-          
-          // 尝试调用钱包的其他方法
-          if (provider.requestAccounts) {
-            try {
-              const manualAccounts = await provider.requestAccounts();
-              console.log('手动获取的账户:', manualAccounts);
-              if (manualAccounts && manualAccounts.length > 0) {
-                finalAddress = this.extractAddress(manualAccounts[0]);
-                if (finalAddress) {
-                  console.log('从requestAccounts获取到地址:', finalAddress);
-                }
-              }
-            } catch (e) {
-              console.warn('requestAccounts失败:', e);
-        }
-      }
-      
-          // 尝试其他可能的方法
-          if (!finalAddress) {
-            // 检查是否有其他地址属性
-            const possibleKeys = ['address', 'addr', 'account', 'publicKey', 'pubKey'];
-            for (const key of possibleKeys) {
-              if (defaultAddr[key] && typeof defaultAddr[key] === 'string' && defaultAddr[key].length > 10) {
-                finalAddress = defaultAddr[key];
-                console.log(`从defaultAddress.${key}获取到地址:`, finalAddress);
-                break;
-              }
-            }
-          }
-          
-          // 尝试调用TP钱包的特定方法
-          if (!finalAddress && provider.getAddress) {
-            try {
-              console.log('尝试调用getAddress方法...');
-              const addr = await provider.getAddress();
-              console.log('getAddress返回:', addr);
-              if (addr && typeof addr === 'string' && addr.length > 10) {
-                finalAddress = addr;
-                console.log('从getAddress获取到地址:', finalAddress);
-              }
-            } catch (e) {
-              console.warn('getAddress失败:', e);
-            }
-          }
-          
-          // 尝试调用TP钱包的getAccount方法
-          if (!finalAddress && provider.getAccount) {
-            try {
-              console.log('尝试调用getAccount方法...');
-              const account = await provider.getAccount();
-              console.log('getAccount返回:', account);
-              if (account && account.address && typeof account.address === 'string' && account.address.length > 10) {
-                finalAddress = account.address;
-                console.log('从getAccount.address获取到地址:', finalAddress);
-              }
-            } catch (e) {
-              console.warn('getAccount失败:', e);
-            }
           }
         }
       }
@@ -633,435 +343,48 @@ class TPWalletH5Service {
               }
             } catch (e) {
               console.warn('address.toString调用失败:', e);
-        }
-      }
-      
-          // 如果toString返回无效值，尝试其他方法
-          if (!finalAddress && addr.toString && addr.toString() === '[object Object]') {
-            console.log('address.toString返回无效值，尝试其他方法...');
-            
-            // 尝试调用address对象的方法
-            if (addr.getAddress && typeof addr.getAddress === 'function') {
-              try {
-                const directAddr = await addr.getAddress();
-                console.log('address.getAddress返回:', directAddr);
-                if (directAddr && typeof directAddr === 'string' && directAddr.length > 10) {
-                  finalAddress = directAddr;
-                  console.log('从address.getAddress获取到地址:', finalAddress);
-                }
-              } catch (e) {
-                console.warn('address.getAddress失败:', e);
-              }
             }
-            
-            // 尝试其他可能的属性
-            const possibleKeys = ['address', 'addr', 'account', 'publicKey', 'pubKey'];
-            for (const key of possibleKeys) {
-              if (addr[key] && typeof addr[key] === 'string' && addr[key].length > 10) {
-                finalAddress = addr[key];
-                console.log(`从address.${key}获取到地址:`, finalAddress);
-                break;
-              }
-            }
-          }
-        }
-      }
-      
-      // 方法5：检查window.tronWeb
-      if (!finalAddress && window.tronWeb) {
-        console.log('检查window.tronWeb...');
-        
-        if (window.tronWeb.defaultAddress) {
-          const webAddr = window.tronWeb.defaultAddress;
-          console.log('tronWeb.defaultAddress:', webAddr);
-          
-          if (webAddr.base58 && webAddr.base58 !== false && typeof webAddr.base58 === 'string') {
-            finalAddress = webAddr.base58;
-            console.log('从tronWeb.defaultAddress.base58获取到地址:', finalAddress);
-          } else if (webAddr.hex && webAddr.hex !== false && typeof webAddr.hex === 'string') {
-            finalAddress = webAddr.hex;
-            console.log('从tronWeb.defaultAddress.hex获取到地址:', finalAddress);
-                      } else if (webAddr.toString && typeof webAddr.toString === 'function') {
-              try {
-                const addrStr = webAddr.toString();
-                if (addrStr && typeof addrStr === 'string' && addrStr.length > 10 && addrStr !== '[object Object]') {
-                  finalAddress = addrStr;
-                  console.log('从tronWeb.defaultAddress.toString获取到地址:', finalAddress);
-                } else {
-                  console.log('tronWeb.defaultAddress.toString返回无效值:', addrStr);
-                }
-              } catch (e) {
-                console.warn('tronWeb.defaultAddress.toString调用失败:', e);
-              }
-            }
-        }
-        
-        if (!finalAddress && window.tronWeb.address) {
-          const webAddr = window.tronWeb.address;
-          console.log('tronWeb.address:', webAddr);
-          
-          if (typeof webAddr === 'string' && webAddr.length > 10) {
-            finalAddress = webAddr;
-            console.log('从tronWeb.address字符串获取到地址:', finalAddress);
-          } else if (typeof webAddr === 'object' && webAddr) {
-            if (webAddr.base58 && webAddr.base58 !== false) {
-              finalAddress = webAddr.base58;
-              console.log('从tronWeb.address.base58获取到地址:', finalAddress);
-            } else if (webAddr.hex && webAddr.hex !== false) {
-              finalAddress = webAddr.hex;
-              console.log('从tronWeb.address.hex获取到地址:', finalAddress);
-            }
-          }
-        }
-      }
-      
-      // 方法6：最后尝试，等待更长时间并重新检查
-      if (!finalAddress) {
-        console.log('等待钱包完全初始化...');
-        await new Promise(resolve => setTimeout(resolve, 3000));
-        
-        // 重新尝试所有方法
-        if (provider.defaultAddress) {
-          const recheckAddr = provider.defaultAddress;
-          if (recheckAddr.base58 && recheckAddr.base58 !== false && typeof recheckAddr.base58 === 'string') {
-            finalAddress = recheckAddr.base58;
-            console.log('重新检查后从defaultAddress.base58获取到地址:', finalAddress);
-          } else if (recheckAddr.hex && recheckAddr.hex !== false && typeof recheckAddr.hex === 'string') {
-            finalAddress = recheckAddr.hex;
-            console.log('重新检查后从defaultAddress.hex获取到地址:', finalAddress);
-          }
-        }
-      }
-      
-      // 方法7：尝试TP钱包特有的方法
-      if (!finalAddress && networkType === 'TRON') {
-        console.log('尝试TP钱包特有的方法...');
-        
-        // 首先检查provider对象中可用的方法
-        console.log('provider对象中可用的方法:', Object.getOwnPropertyNames(provider).filter(name => typeof provider[name] === 'function'));
-            
-        // 尝试请求TP钱包权限
-        try {
-          console.log('尝试请求TP钱包权限...');
-          if (provider.request) {
-            // 尝试多种权限请求方法
-            const methods = ['tron_requestAccounts', 'eth_requestAccounts', 'requestAccounts'];
-            for (const method of methods) {
-              try {
-                console.log(`尝试调用${method}方法...`);
-                const result = await provider.request({ method: method });
-                console.log(`${method}返回:`, result);
-                if (result && Array.isArray(result) && result.length > 0) {
-                  const addr = this.extractAddress(result[0]);
-                  if (addr) {
-                    finalAddress = addr;
-                    console.log(`从${method}获取到地址:`, finalAddress);
-                    break;
-                  }
-                }
-              } catch (e) {
-                console.warn(`${method}失败:`, e);
-              }
-            }
-          }
-        } catch (e) {
-          console.warn('请求TP钱包权限失败:', e);
-        }
-        
-        // 尝试调用TP钱包的getCurrentAccount方法
-        if (provider.getCurrentAccount) {
-          try {
-            console.log('尝试调用getCurrentAccount方法...');
-            const currentAccount = await provider.getCurrentAccount();
-            console.log('getCurrentAccount返回:', currentAccount);
-            if (currentAccount && currentAccount.address && typeof currentAccount.address === 'string' && currentAccount.address.length > 10) {
-              finalAddress = currentAccount.address;
-              console.log('从getCurrentAccount.address获取到地址:', finalAddress);
-            }
-          } catch (e) {
-            console.warn('getCurrentAccount失败:', e);
-              }
-            }
-            
-        // 尝试调用TP钱包的getAccountInfo方法
-        if (!finalAddress && provider.getAccountInfo) {
-          try {
-            console.log('尝试调用getAccountInfo方法...');
-            const accountInfo = await provider.getAccountInfo();
-            console.log('getAccountInfo返回:', accountInfo);
-            if (accountInfo && accountInfo.address && typeof accountInfo.address === 'string' && accountInfo.address.length > 10) {
-              finalAddress = accountInfo.address;
-              console.log('从getAccountInfo.address获取到地址:', finalAddress);
-            }
-          } catch (e) {
-            console.warn('getAccountInfo失败:', e);
-          }
-        }
-        
-        // 尝试调用TP钱包的getAccount方法
-        if (!finalAddress && provider.getAccount) {
-                try {
-            console.log('尝试调用getAccount方法...');
-            const account = await provider.getAccount();
-            console.log('getAccount返回:', account);
-            if (account && account.address && typeof account.address === 'string' && account.address.length > 10) {
-              finalAddress = account.address;
-              console.log('从getAccount.address获取到地址:', finalAddress);
-            }
-          } catch (e) {
-            console.warn('getAccount失败:', e);
-          }
-        }
-        
-        // 尝试调用TP钱包的getAddress方法
-        if (!finalAddress && provider.getAddress) {
-          try {
-            console.log('尝试调用getAddress方法...');
-            const addr = await provider.getAddress();
-            console.log('getAddress返回:', addr);
-            if (addr && typeof addr === 'string' && addr.length > 10) {
-              finalAddress = addr;
-              console.log('从getAddress获取到地址:', finalAddress);
-            }
-          } catch (e) {
-            console.warn('getAddress失败:', e);
-          }
-        }
-        
-        // 尝试调用TP钱包的getAccounts方法
-        if (!finalAddress && provider.getAccounts) {
-          try {
-            console.log('尝试调用getAccounts方法...');
-            const accounts = await provider.getAccounts();
-            console.log('getAccounts返回:', accounts);
-            if (accounts && Array.isArray(accounts) && accounts.length > 0) {
-              const addr = this.extractAddress(accounts[0]);
-              if (addr) {
-                finalAddress = addr;
-                console.log('从getAccounts获取到地址:', finalAddress);
-              }
-            }
-          } catch (e) {
-            console.warn('getAccounts失败:', e);
-          }
-        }
-        
-        // 尝试调用TP钱包的requestAccounts方法
-        if (!finalAddress && provider.requestAccounts) {
-          try {
-            console.log('尝试调用requestAccounts方法...');
-            const accounts = await provider.requestAccounts();
-            console.log('requestAccounts返回:', accounts);
-            if (accounts && Array.isArray(accounts) && accounts.length > 0) {
-              const addr = this.extractAddress(accounts[0]);
-              if (addr) {
-                finalAddress = addr;
-                console.log('从requestAccounts获取到地址:', finalAddress);
-              }
-            }
-          } catch (e) {
-            console.warn('requestAccounts失败:', e);
-          }
-        }
-        
-        // 尝试使用setPrivateKey来触发地址初始化（如果钱包已解锁）
-        if (!finalAddress && provider.setPrivateKey) {
-          try {
-            console.log('尝试使用setPrivateKey触发地址初始化...');
-            // 这里我们不实际设置私钥，只是检查方法是否存在
-            // 如果钱包已解锁，这个方法应该可用
-            console.log('setPrivateKey方法存在，钱包可能已解锁');
-            
-            // 重新检查defaultAddress
-            if (provider.defaultAddress) {
-              console.log('setPrivateKey检查后的defaultAddress:', provider.defaultAddress);
-              const defaultAddr = provider.defaultAddress;
-              if (defaultAddr.base58 && defaultAddr.base58 !== false && typeof defaultAddr.base58 === 'string') {
-                finalAddress = defaultAddr.base58;
-                console.log('setPrivateKey检查后从defaultAddress.base58获取到地址:', finalAddress);
-              } else if (defaultAddr.hex && defaultAddr.hex !== false && typeof defaultAddr.hex === 'string') {
-                finalAddress = defaultAddr.hex;
-                console.log('setPrivateKey检查后从defaultAddress.hex获取到地址:', finalAddress);
-                    }
-                  }
-          } catch (e) {
-            console.warn('setPrivateKey检查失败:', e);
-          }
-                }
-      }
-      
-      // 最后的尝试：检查TP钱包的网络设置
-      if (!finalAddress && networkType === 'TRON') {
-        console.log('最后的尝试：检查TP钱包的网络设置...');
-        
-        // 尝试设置网络节点
-        if (provider.setFullNode) {
-          try {
-            console.log('尝试设置TRON主网节点...');
-            // 设置TRON主网节点
-            provider.setFullNode('https://api.trongrid.io');
-            console.log('TRON主网节点设置成功');
-            
-            // 等待一下让网络设置生效
-            await new Promise(resolve => setTimeout(resolve, 1000));
-            
-            // 重新尝试获取地址
-            if (provider.defaultAddress) {
-              console.log('网络设置后的defaultAddress:', provider.defaultAddress);
-              const defaultAddr = provider.defaultAddress;
-              if (defaultAddr.base58 && defaultAddr.base58 !== false && typeof defaultAddr.base58 === 'string') {
-                finalAddress = defaultAddr.base58;
-                console.log('网络设置后从defaultAddress.base58获取到地址:', finalAddress);
-              } else if (defaultAddr.hex && defaultAddr.hex !== false && typeof defaultAddr.hex === 'string') {
-                finalAddress = defaultAddr.hex;
-                console.log('网络设置后从defaultAddress.hex获取到地址:', finalAddress);
-              }
-            }
-          } catch (e) {
-            console.warn('设置TRON主网节点失败:', e);
-          }
-        }
-        
-        // 检查TP钱包的账户状态
-        console.log('检查TP钱包的账户状态...');
-        
-        // 尝试检查是否有账户存在
-        if (provider.createAccount && provider.createRandom) {
-          console.log('TP钱包支持创建账户，说明钱包已初始化');
-                }
-        
-        // 检查钱包是否已解锁
-        if (provider.setPrivateKey) {
-          console.log('setPrivateKey方法可用，说明钱包已解锁');
-        }
-        
-        // 检查网络连接状态
-        if (provider.fullNode && provider.fullNode.host) {
-          console.log('当前连接的节点:', provider.fullNode.host);
-            }
-            
-        // 尝试检查是否有已导入的账户
-        console.log('检查是否有已导入的账户...');
-        
-        // 尝试从TP钱包的存储中获取账户信息
-        if (window.tronLink && window.tronLink.accounts) {
-          console.log('tronLink.accounts:', window.tronLink.accounts);
-          if (window.tronLink.accounts && window.tronLink.accounts.length > 0) {
-            console.log('发现tronLink中的账户:', window.tronLink.accounts);
-            const account = window.tronLink.accounts[0];
-            if (account && account.address) {
-              finalAddress = account.address;
-              console.log('从tronLink.accounts获取到地址:', finalAddress);
-            }
-          }
-        }
-        
-        // 尝试从localStorage中获取账户信息
-        try {
-          const storedAccounts = localStorage.getItem('tronLinkAccounts');
-          if (storedAccounts) {
-            console.log('localStorage中的账户信息:', storedAccounts);
-            const accounts = JSON.parse(storedAccounts);
-            if (accounts && accounts.length > 0) {
-              console.log('发现localStorage中的账户:', accounts);
-              const account = accounts[0];
-              if (account && account.address) {
-                finalAddress = account.address;
-                console.log('从localStorage获取到地址:', finalAddress);
-            }
-          }
-        }
-        } catch (e) {
-          console.warn('读取localStorage失败:', e);
-        }
-        
-        // 尝试创建一个测试账户来检查钱包状态
-        if (provider.createRandom) {
-          try {
-            console.log('尝试创建测试账户来检查钱包状态...');
-            const testAccount = provider.createRandom();
-            console.log('测试账户创建结果:', testAccount);
-            
-            if (testAccount && testAccount.address) {
-              console.log('钱包可以创建账户，说明钱包功能正常');
-              console.log('测试账户地址:', testAccount.address);
-              
-              // 如果还没有获取到地址，使用测试账户的地址
-              if (!finalAddress && testAccount.address) {
-                finalAddress = testAccount.address;
-                console.log('使用测试账户地址作为当前地址:', finalAddress);
-              }
-              
-              // 尝试设置这个账户为默认账户
-              if (provider.setPrivateKey && testAccount.privateKey) {
-                try {
-                  console.log('尝试设置测试账户为默认账户...');
-                  provider.setPrivateKey(testAccount.privateKey);
-                  console.log('测试账户设置成功');
-                  
-                  // 等待一下让设置生效
-                  await new Promise(resolve => setTimeout(resolve, 1000));
-                  
-                  // 重新检查defaultAddress
-                  if (provider.defaultAddress) {
-                    console.log('设置测试账户后的defaultAddress:', provider.defaultAddress);
-                    const defaultAddr = provider.defaultAddress;
-                    if (defaultAddr.base58 && defaultAddr.base58 !== false && typeof defaultAddr.base58 === 'string') {
-                      finalAddress = defaultAddr.base58;
-                      console.log('设置测试账户后从defaultAddress.base58获取到地址:', finalAddress);
-                    } else if (defaultAddr.hex && defaultAddr.hex !== false && typeof defaultAddr.hex === 'string') {
-                      finalAddress = defaultAddr.hex;
-                      console.log('设置测试账户后从defaultAddress.hex获取到地址:', finalAddress);
-                    }
-                  }
-                } catch (e) {
-                  console.warn('设置测试账户失败:', e);
-                }
-              }
-            }
-          } catch (e) {
-            console.warn('创建测试账户失败:', e);
           }
         }
       }
       
       console.log('最终获取到的地址:', finalAddress);
       
-              // 最终验证地址是否有效
-        if (finalAddress && this.isValidAddress(finalAddress)) {
-          this.account = finalAddress;
-          this.isConnected = true;
-          this.provider = provider;
-          
-          // 根据网络类型设置chainId
-          if (networkType === 'BSC') {
-            this.chainId = 56;
-          } else if (networkType === 'OPTIMISM') {
-            this.chainId = 10;
-          } else if (networkType === 'ETH') {
-            this.chainId = 1;
-          } else if (networkType === 'TRON') {
-            this.chainId = 1;
-          } else {
-            // 如果网络类型未知，通过地址格式判断
-            if (finalAddress && finalAddress.startsWith('0x')) {
-              this.chainId = 1; // ETH格式地址，设置为ETH网络
-              console.log('通过地址格式判断为ETH网络');
-            } else if (finalAddress && finalAddress.startsWith('T')) {
-              this.chainId = 1; // TRON格式地址，设置为TRON网络
-              console.log('通过地址格式判断为TRON网络');
-            } else {
-              this.chainId = 1; // 默认
-            }
-          }
-          
-          console.log('连接成功，最终地址:', this.account, '网络类型:', networkType, 'chainId:', this.chainId);
-          return { success: true, account: this.account, chainId: this.chainId };
+      // 最终验证地址是否有效
+      if (finalAddress && this.isValidAddress(finalAddress)) {
+        this.account = finalAddress;
+        this.isConnected = true;
+        this.provider = provider;
+        
+        // 根据网络类型设置chainId
+        if (networkType === 'BSC') {
+          this.chainId = 56;
+        } else if (networkType === 'OPTIMISM') {
+          this.chainId = 10;
+        } else if (networkType === 'ETH') {
+          this.chainId = 1;
+        } else if (networkType === 'TRON') {
+          this.chainId = 1;
         } else {
-          // 根据检测到的情况提供更具体的指导
-          let errorMsg = '无法获取账户地址';
-          let suggestions = '';
-          
+          // 如果网络类型未知，通过地址格式判断
+          if (finalAddress && finalAddress.startsWith('0x')) {
+            this.chainId = 1; // ETH格式地址，设置为ETH网络
+            console.log('通过地址格式判断为ETH网络');
+          } else if (finalAddress && finalAddress.startsWith('T')) {
+            this.chainId = 1; // TRON格式地址，设置为TRON网络
+            console.log('通过地址格式判断为TRON网络');
+          } else {
+            this.chainId = 1; // 默认
+          }
+        }
+        
+        console.log('连接成功，最终地址:', this.account, '网络类型:', networkType, 'chainId:', this.chainId);
+        return { success: true, account: this.account, chainId: this.chainId };
+      } else {
+        // 根据检测到的情况提供更具体的指导
+        let errorMsg = '无法获取账户地址';
+        let suggestions = '';
+        
         if (networkType === 'BSC' || networkType === 'ETH') {
           if (provider.defaultAddress && typeof provider.defaultAddress === 'object' && 
               provider.defaultAddress.base58 === false && provider.defaultAddress.hex === false) {
@@ -1086,13 +409,13 @@ class TPWalletH5Service {
             errorMsg = '无法识别的TP账户数据格式';
             suggestions = '请尝试：\n1. 更新TP钱包到最新版本\n2. 重启TP钱包应用\n3. 清除浏览器缓存后重试\n4. 检查TP钱包是否已登录\n5. 在TP钱包中重新选择TRON账户';
           }
-          }
-          
-          return { 
-            success: false, 
-            error: errorMsg,
-            suggestions: suggestions,
-            code: 'ADDRESS_EXTRACTION_FAILED'
+        }
+        
+        return { 
+          success: false, 
+          error: errorMsg,
+          suggestions: suggestions,
+          code: 'ADDRESS_EXTRACTION_FAILED'
         };
       }
     } catch (error) {
@@ -1143,153 +466,6 @@ class TPWalletH5Service {
       return 'ETH'; // 默认返回ETH
     }
     return 'UNKNOWN';
-  }
-
-  // 测试余额查询（用于调试）
-  async testBalanceQuery(address = null) {
-    try {
-      if (!this.isConnected || !this.provider) {
-        throw new Error('钱包未连接');
-      }
-
-      const targetAddress = address || this.account;
-      console.log('=== 开始测试余额查询 ===');
-      console.log('目标地址:', targetAddress);
-      console.log('当前网络类型:', this.getCurrentNetworkType());
-      console.log('当前chainId:', this.chainId);
-      
-      // 直接调用eth_getBalance
-      if (this.provider.request) {
-        try {
-          const result = await this.provider.request({
-            method: 'eth_getBalance',
-            params: [targetAddress, 'latest']
-          });
-          console.log('eth_getBalance原始结果:', result);
-          console.log('结果类型:', typeof result);
-          console.log('结果长度:', result ? result.length : 'N/A');
-          
-          // 尝试不同的解析方法
-          let balance1, balance2, balance3;
-          
-          try {
-            balance1 = parseInt(result, 16) / Math.pow(10, 18);
-            console.log('parseInt方法结果:', balance1);
-          } catch (e) {
-            console.log('parseInt方法失败:', e);
-          }
-          
-          try {
-            balance2 = Number(result, 16) / Math.pow(10, 18);
-            console.log('Number方法结果:', balance2);
-          } catch (e) {
-            console.log('Number方法失败:', e);
-          }
-          
-          try {
-            const wei = BigInt(result);
-            balance3 = Number(wei) / Math.pow(10, 18);
-            console.log('BigInt方法结果:', balance3);
-          } catch (e) {
-            console.log('BigInt方法失败:', e);
-          }
-          
-          console.log('=== 余额查询测试完成 ===');
-          return { success: true, result, balance1, balance2, balance3 };
-        } catch (error) {
-          console.error('测试余额查询失败:', error);
-          return { success: false, error: error.message };
-        }
-      }
-    } catch (error) {
-      console.error('测试余额查询失败:', error);
-      return { success: false, error: error.message };
-    }
-  }
-
-  // 检查钱包连接状态
-  checkConnectionStatus() {
-    return {
-      isConnected: this.isConnected,
-      account: this.account,
-      chainId: this.chainId,
-      provider: !!this.provider,
-      networkType: this.getCurrentNetworkType()
-    };
-  }
-
-  // 尝试重新连接
-  async attemptReconnect() {
-    try {
-      console.log('H5钱包服务尝试重连...');
-      
-      // 检查provider是否仍然可用
-      if (!this.provider) {
-        console.log('Provider不可用，尝试重新检测钱包...');
-        return await this.connectWallet();
-      }
-
-      // 检查账户是否仍然有效
-      if (this.account && this.provider.request) {
-        try {
-          const accounts = await this.provider.request({ method: 'eth_accounts' });
-          if (accounts && accounts.length > 0) {
-            console.log('账户仍然有效，恢复连接状态');
-            this.isConnected = true;
-            return { success: true, account: this.account, chainId: this.chainId };
-          }
-        } catch (error) {
-          console.log('检查账户状态失败，尝试重新连接:', error);
-        }
-      }
-
-      // 尝试重新连接
-      return await this.connectWallet();
-    } catch (error) {
-      console.error('H5钱包重连失败:', error);
-      return { success: false, error: error.message };
-    }
-  }
-
-  // 验证连接状态
-  async validateConnection() {
-    try {
-      if (!this.isConnected || !this.provider || !this.account) {
-        console.log('连接状态无效，重置状态');
-        this.isConnected = false;
-        this.account = null;
-        this.chainId = null;
-        return false;
-      }
-
-      // 尝试获取账户列表验证连接
-      if (this.provider.request) {
-        try {
-          const accounts = await this.provider.request({ method: 'eth_accounts' });
-          if (accounts && accounts.length > 0 && accounts.includes(this.account)) {
-            console.log('连接状态验证成功');
-            return true;
-          } else {
-            console.log('连接状态验证失败，账户不匹配');
-            this.isConnected = false;
-            this.account = null;
-            this.chainId = null;
-            return false;
-          }
-        } catch (error) {
-          console.log('连接状态验证失败:', error);
-          this.isConnected = false;
-          this.account = null;
-          this.chainId = null;
-          return false;
-        }
-      }
-
-      return false;
-    } catch (error) {
-      console.error('验证连接状态失败:', error);
-      return false;
-    }
   }
 
   // 添加获取余额方法
@@ -1479,38 +655,784 @@ class TPWalletH5Service {
     }
   }
 
-  // 添加获取交易历史方法
-  async getTransactionHistory(address = null, limit = 20) {
+  // 发送交易方法
+  async sendTransaction(toAddress, amount) {
     try {
       if (!this.isConnected || !this.provider) {
         throw new Error('钱包未连接');
       }
 
-      let targetAddress = address || this.account;
-      
-      // 如果地址是对象，尝试提取
-      targetAddress = this.extractAddress(targetAddress);
-      
+      // 提取目标地址
+      const targetAddress = this.extractAddress(toAddress);
       if (!targetAddress) {
         throw new Error('无效的目标地址');
       }
+
+      console.log('准备发送交易:', {
+        to: targetAddress,
+        amount: amount,
+        from: this.account,
+        network: this.chainId
+      });
+
+      let result;
       
-      // 由于很多钱包不支持交易历史查询，返回模拟数据或空数据
-      console.warn('交易历史查询功能暂未完全支持，返回空列表');
+      // 根据网络类型选择不同的发送方法
+      if (this.chainId === 56) {
+        // BSC网络
+        result = await this.sendBSCTransaction(targetAddress, amount);
+      } else if (this.chainId === 1) {
+        // ETH网络
+        result = await this.sendETHTransaction(targetAddress, amount);
+      } else if (this.chainId === 10) {
+        // Optimism网络（使用ETH方法）
+        result = await this.sendETHTransaction(targetAddress, amount);
+      } else {
+        // 默认使用通用方法
+        result = await this.sendGenericTransaction(targetAddress, amount);
+      }
+
+      return result;
+    } catch (error) {
+      console.error('发送交易失败:', error);
+      return {
+        success: false,
+        error: error.message
+      };
+    }
+  }
+
+  // 发送BSC交易
+  async sendBSCTransaction(toAddress, amount) {
+    try {
+      if (this.provider.request) {
+        const result = await this.provider.request({
+          method: 'eth_sendTransaction',
+          params: [{
+            to: toAddress,
+            value: '0x' + (amount * Math.pow(10, 18)).toString(16),
+            from: this.account
+          }]
+        });
+        
+        return {
+          success: true,
+          txHash: result,
+          message: 'BSC交易已提交'
+        };
+      } else {
+        throw new Error('当前钱包不支持BSC交易');
+      }
+    } catch (error) {
+      console.error('BSC交易发送失败:', error);
+      return {
+        success: false,
+        error: (error && error.message) ? error.message : 'BSC交易发送失败'
+      };
+    }
+  }
+
+  // 发送ETH交易
+  async sendETHTransaction(toAddress, amount) {
+    try {
+      if (this.provider.request) {
+        const result = await this.provider.request({
+          method: 'eth_sendTransaction',
+          params: [{
+            to: toAddress,
+            value: '0x' + (amount * Math.pow(10, 18)).toString(16),
+            from: this.account
+          }]
+        });
+        
+        return {
+          success: true,
+          txHash: result,
+          message: 'ETH交易已提交'
+        };
+      } else {
+        throw new Error('当前钱包不支持ETH交易');
+      }
+    } catch (error) {
+      console.error('ETH交易发送失败:', error);
+      return {
+        success: false,
+        error: (error && error.message) ? error.message : 'ETH交易发送失败'
+      };
+    }
+  }
+
+  // 发送通用交易
+  async sendGenericTransaction(toAddress, amount) {
+    try {
+      if (this.provider.request) {
+        const result = await this.provider.request({
+          method: 'eth_sendTransaction',
+          params: [{
+            to: toAddress,
+            value: '0x' + (amount * Math.pow(10, 18)).toString(16),
+            from: this.account
+          }]
+        });
+        
+        return {
+          success: true,
+          txHash: result,
+          message: '交易已提交'
+        };
+      } else {
+        throw new Error('当前钱包不支持交易发送');
+      }
+    } catch (error) {
+      console.error('通用交易发送失败:', error);
+      return {
+        success: false,
+        error: (error && error.message) ? error.message : '交易发送失败'
+      };
+    }
+  }
+
+  // 发送USDT代币转账
+  async sendUSDTTransaction(toAddress, amount) {
+    try {
+      if (!this.isConnected || !this.provider) {
+        throw new Error('钱包未连接');
+      }
+
+      console.log('开始USDT代币转账:', {
+        to: toAddress,
+        amount: amount,
+        from: this.account,
+        chainId: this.chainId
+      });
+
+      // 验证目标地址
+      const targetAddress = this.extractAddress(toAddress);
+      if (!targetAddress) {
+        throw new Error('无效的目标地址: ' + toAddress);
+      }
+
+      // 根据当前网络获取USDT合约地址和精度
+      let usdtContractAddress;
+      let decimals;
+      
+      // 首先尝试从配置文件获取
+      try {
+        const usdtConfig = getUSDTContractByChainId(this.chainId);
+        if (usdtConfig && usdtConfig.address) {
+          usdtContractAddress = usdtConfig.address;
+          decimals = usdtConfig.decimals;
+          console.log('从配置文件获取USDT合约 (chainId:', this.chainId, '):', usdtConfig);
+        } else {
+          throw new Error('配置文件中未找到USDT合约配置 (chainId: ' + this.chainId + ')');
+        }
+      } catch (configError) {
+        console.warn('从配置文件获取USDT合约失败，使用硬编码配置:', configError);
+        
+        // 降级到硬编码配置
+        if (this.chainId === 1) {
+          // 以太坊主网
+          usdtContractAddress = '0xdAC17F958D2ee523a2206206994597C13D831ec7';
+          decimals = 6;
+        } else if (this.chainId === 56) {
+          // BSC网络
+          usdtContractAddress = '0x55d398326f99059fF775485246999027B3197955';
+          decimals = 18;
+        } else if (this.chainId === 5) {
+          // 以太坊测试网
+          usdtContractAddress = '0x509Ee0d083DdF8AC028f2a56731412edD63223B9';
+          decimals = 6;
+        } else if (this.chainId === 10) {
+          // Optimism网络
+          usdtContractAddress = '0x94b008aA00579c1307B0EF2c499aD98a8ce58e58';
+          decimals = 6;
+        } else if (this.chainId === 137) {
+          // Polygon网络
+          usdtContractAddress = '0xc2132D05D31c914a87C6611C10748AEb04B58e8F';
+          decimals = 6;
+        } else if (this.chainId === 42161) {
+          // Arbitrum网络
+          usdtContractAddress = '0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9';
+          decimals = 6;
+        } else {
+          throw new Error('当前网络 (chainId: ' + this.chainId + ') 不支持USDT');
+        }
+      }
+
+      // 验证金额
+      if (!amount || amount <= 0) {
+        throw new Error('转账金额必须大于0');
+      }
+
+      // 验证USDT合约是否可访问
+      console.log('验证USDT合约可访问性...');
+      const contractValidation = await this.validateUSDTContract(usdtContractAddress);
+      if (!contractValidation.valid) {
+        throw new Error('USDT合约不可访问: ' + contractValidation.error);
+      }
+      console.log('USDT合约验证通过');
+
+      // ERC-20 transfer方法的函数签名
+      const transferMethodSignature = '0xa9059cbb';
+      
+      // 构造transfer方法的参数 (transfer(address to, uint256 amount))
+      // 确保地址格式正确（移除0x前缀，补齐到64位）
+      const toAddressPadded = targetAddress.slice(2).toLowerCase().padStart(64, '0');
+      
+      // 计算代币数量（考虑精度）
+      const amountWei = BigInt(Math.floor(amount * Math.pow(10, decimals)));
+      const amountPadded = amountWei.toString(16).padStart(64, '0');
+      
+      const data = transferMethodSignature + toAddressPadded + amountPadded;
+      
+      console.log('USDT转账参数详情:', {
+        to: usdtContractAddress,
+        data: data,
+        from: this.account,
+        amount: amount,
+        amountWei: amountWei.toString(),
+        decimals: decimals,
+        toAddressPadded: toAddressPadded,
+        amountPadded: amountPadded,
+        methodSignature: transferMethodSignature
+      });
+
+      if (this.provider.request) {
+        // 先尝试估算gas
+        let gasEstimate;
+        try {
+          console.log('开始估算gas...');
+          gasEstimate = await this.provider.request({
+            method: 'eth_estimateGas',
+            params: [{
+              to: usdtContractAddress,
+              data: data,
+              from: this.account
+            }]
+          });
+          console.log('Gas估算成功:', gasEstimate);
+        } catch (gasError) {
+          console.warn('Gas估算失败，使用默认值:', gasError);
+          // 使用默认gas限制
+          gasEstimate = '0x' + (100000).toString(16);
+        }
+
+        // 发送交易
+        const result = await this.provider.request({
+          method: 'eth_sendTransaction',
+          params: [{
+            to: usdtContractAddress,
+            data: data,
+            from: this.account,
+            gas: gasEstimate
+          }]
+        });
+        
+        console.log('USDT转账结果:', result);
+        
+        return {
+          success: true,
+          txHash: result,
+          message: 'USDT转账已提交',
+          contractAddress: usdtContractAddress,
+          amount: amount,
+          decimals: decimals,
+          gasEstimate: gasEstimate
+        };
+      } else {
+        throw new Error('当前钱包不支持代币转账');
+      }
+    } catch (error) {
+      console.error('USDT转账失败:', error);
+      
+      // 提供更详细的错误信息
+      let errorMessage = 'USDT转账失败';
+      if (error.message) {
+        if (error.message.includes('insufficient funds')) {
+          errorMessage = '余额不足，请检查USDT余额和ETH/BNB余额（用于支付gas费）';
+        } else if (error.message.includes('gas')) {
+          errorMessage = 'Gas估算失败，请检查网络连接和合约地址';
+        } else if (error.message.includes('revert')) {
+          errorMessage = '交易被拒绝，可能是合约调用失败或余额不足';
+        } else if (error.message.includes('invalid address')) {
+          errorMessage = '无效的合约地址或目标地址';
+        } else {
+          errorMessage = error.message;
+        }
+      }
       
       return {
+        success: false,
+        error: errorMessage,
+        originalError: error.message
+      };
+    }
+  }
+
+  // 验证USDT合约是否可访问
+  async validateUSDTContract(contractAddress) {
+    try {
+      if (!this.provider || !this.provider.request) {
+        return { valid: false, error: 'Provider不可用' };
+      }
+
+      // 尝试调用合约的name()方法
+      const nameMethodSignature = '0x06fdde03'; // name()
+      const result = await this.provider.request({
+        method: 'eth_call',
+        params: [{
+          to: contractAddress,
+          data: nameMethodSignature
+        }, 'latest']
+      });
+
+      console.log('USDT合约验证结果:', result);
+      return { valid: true, result: result };
+    } catch (error) {
+      console.warn('USDT合约验证失败:', error);
+      return { valid: false, error: error.message };
+    }
+  }
+
+  // 获取USDT余额
+  async getUSDTBalance(address = null) {
+    try {
+      console.log('=== USDT余额查询开始 ===');
+      console.log('钱包连接状态:', this.isConnected);
+      console.log('Provider状态:', !!this.provider);
+      console.log('当前账户:', this.account);
+      console.log('当前chainId:', this.chainId);
+      console.log('传入地址参数:', address);
+      
+      if (!this.isConnected || !this.provider) {
+        console.error('钱包未连接或provider无效');
+        throw new Error('钱包未连接');
+      }
+
+      let targetAddress = address || this.account;
+      console.log('目标地址(提取前):', targetAddress);
+      
+      targetAddress = this.extractAddress(targetAddress);
+      console.log('目标地址(提取后):', targetAddress);
+      
+      if (!targetAddress || typeof targetAddress !== 'string' || targetAddress.length < 10) {
+        console.warn('地址无效:', targetAddress, '原始输入:', address || this.account);
+        return {
+          success: false,
+          error: '1地址无效',
+          balance: 0,
+          debug: {
+            originalAddress: address || this.account,
+            extractedAddress: targetAddress,
+            isConnected: this.isConnected,
+            hasProvider: !!this.provider,
+            chainId: this.chainId
+          }
+        };
+      }
+
+      // 根据当前网络获取USDT合约地址
+      let usdtContractAddress;
+      let decimals;
+      
+      console.log('检测网络类型，chainId:', this.chainId);
+      
+      // 首先尝试从配置文件获取
+      try {
+        const usdtConfig = getUSDTContractByChainId(this.chainId);
+        if (usdtConfig && usdtConfig.address) {
+          usdtContractAddress = usdtConfig.address;
+          decimals = usdtConfig.decimals;
+          console.log('从配置文件获取USDT合约 (chainId:', this.chainId, '):', usdtConfig);
+        } else {
+          throw new Error('配置文件中未找到USDT合约配置 (chainId: ' + this.chainId + ')');
+        }
+      } catch (configError) {
+        console.warn('从配置文件获取USDT合约失败，使用硬编码配置:', configError);
+        
+        // 降级到硬编码配置
+        if (this.chainId === 1) {
+          // 以太坊主网
+          usdtContractAddress = '0xdAC17F958D2ee523a2206206994597C13D831ec7';
+          decimals = 6;
+          console.log('使用ETH主网USDT合约');
+        } else if (this.chainId === 56) {
+          // BSC网络
+          usdtContractAddress = '0x55d398326f99059fF775485246999027B3197955';
+          decimals = 18;
+          console.log('使用BSC网络USDT合约');
+        } else if (this.chainId === 5) {
+          // 以太坊Goerli测试网
+          usdtContractAddress = '0x509Ee0d083DdF8AC028f2a56731412edD63223B9';
+          decimals = 6;
+          console.log('使用ETH Goerli测试网USDT合约');
+        } else if (this.chainId === 10) {
+          // Optimism网络
+          usdtContractAddress = '0x94b008aA00579c1307B0EF2c499aD98a8ce58e58';
+          decimals = 6;
+          console.log('使用Optimism网络USDT合约');
+        } else if (this.chainId === 137) {
+          // Polygon网络
+          usdtContractAddress = '0xc2132D05D31c914a87C6611C10748AEb04B58e8F';
+          decimals = 6;
+          console.log('使用Polygon网络USDT合约');
+        } else if (this.chainId === 42161) {
+          // Arbitrum网络
+          usdtContractAddress = '0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9';
+          decimals = 6;
+          console.log('使用Arbitrum网络USDT合约');
+        } else {
+          // 不支持的网络
+          console.error('不支持的网络类型，chainId:', this.chainId);
+          return {
+            success: false,
+            error: '当前网络 (chainId: ' + this.chainId + ') 不支持USDT',
+            balance: 0,
+            debug: {
+              chainId: this.chainId,
+              supportedNetworks: [1, 5, 10, 56, 137, 42161],
+              currentNetwork: this.getCurrentNetworkType(),
+              suggestion: '请切换到支持的网络：ETH主网(1)、BSC(56)、Optimism(10)、Polygon(137)、Arbitrum(42161)'
+            }
+          };
+        }
+      }
+      
+      // ERC-20 balanceOf方法的函数签名
+      const balanceOfMethodSignature = '0x70a08231';
+      
+      // 构造balanceOf方法的参数 (balanceOf(address owner))
+      const addressPadded = targetAddress.slice(2).padStart(64, '0');
+      const data = balanceOfMethodSignature + addressPadded;
+      
+      console.log('查询USDT余额参数:', {
+        to: usdtContractAddress,
+        data: data,
+        from: targetAddress,
+        chainId: this.chainId,
+        decimals: decimals,
+        methodSignature: balanceOfMethodSignature
+      });
+
+      if (this.provider.request) {
+        try {
+          const result = await this.provider.request({
+            method: 'eth_call',
+            params: [{
+              to: usdtContractAddress,
+              data: data
+            }, 'latest']
+          });
+          
+          console.log('USDT余额查询原始结果:', result, '类型:', typeof result);
+          
+          // 解析结果
+          let usdtBalance = 0;
+          if (result && result !== '0x' && result !== '0x0') {
+            const balanceHex = result.startsWith('0x') ? result : '0x' + result;
+            const balanceWei = BigInt(balanceHex);
+            usdtBalance = Number(balanceWei) / Math.pow(10, decimals);
+            console.log('USDT余额解析成功:', {
+              rawResult: result,
+              balanceHex: balanceHex,
+              balanceWei: balanceWei.toString(),
+              decimals: decimals,
+              finalBalance: usdtBalance
+            });
+          } else {
+            console.log('USDT余额为0或查询失败，原始结果:', result);
+          }
+          
+          console.log('=== USDT余额查询完成 ===');
+          
+          return {
+            success: true,
+            balance: usdtBalance,
+            address: targetAddress,
+            symbol: 'USDT',
+            chainId: this.chainId,
+            contractAddress: usdtContractAddress,
+            debug: {
+              rawResult: result,
+              decimals: decimals,
+              networkType: this.getCurrentNetworkType()
+            }
+          };
+        } catch (callError) {
+          console.error('eth_call调用失败:', callError);
+          throw new Error('USDT余额查询调用失败: ' + callError.message);
+        }
+      } else {
+        console.error('Provider不支持request方法');
+        throw new Error('当前钱包不支持代币余额查询');
+      }
+    } catch (error) {
+      console.error('=== USDT余额查询异常 ===');
+      console.error('错误详情:', error);
+      console.error('错误堆栈:', error.stack);
+      return {
+        success: false,
+        error: (error && error.message) ? error.message : '获取USDT余额失败',
+        balance: 0,
+        debug: {
+          errorType: error.constructor.name,
+          errorMessage: error.message,
+          isConnected: this.isConnected,
+          hasProvider: !!this.provider,
+          chainId: this.chainId,
+          account: this.account,
+          networkType: this.getCurrentNetworkType()
+        }
+      };
+    }
+  }
+
+  // 签名消息
+  async signMessage(message) {
+    try {
+      if (!this.isConnected || !this.provider) {
+        throw new Error('钱包未连接');
+      }
+
+      if (this.provider.request) {
+        const result = await this.provider.request({
+          method: 'personal_sign',
+          params: [message, this.account]
+        });
+        
+        return {
+          success: true,
+          signature: result
+        };
+      } else {
+        throw new Error('当前钱包不支持消息签名');
+      }
+    } catch (error) {
+      console.error('签名消息失败:', error);
+      return {
+        success: false,
+        error: error.message
+      };
+    }
+  }
+
+  // 切换网络
+  async switchNetwork(chainId) {
+    try {
+      if (!this.provider) {
+        throw new Error('钱包未连接');
+      }
+
+      console.log('尝试切换网络到chainId:', chainId);
+
+      if (this.provider.request) {
+        const result = await this.provider.request({
+          method: 'wallet_switchEthereumChain',
+          params: [{ chainId: '0x' + chainId.toString(16) }]
+        });
+        
+        this.chainId = chainId;
+        console.log('网络切换成功，新的chainId:', chainId);
+        return {
+          success: true,
+          chainId: chainId
+        };
+      } else {
+        throw new Error('当前钱包不支持网络切换');
+      }
+    } catch (error) {
+      console.error('切换网络失败:', error);
+      
+      // 如果是网络未添加的错误，尝试添加网络
+      if (error.code === 4902) {
+        console.log('网络未添加，尝试添加网络...');
+        return await this.addNetwork(chainId);
+      }
+      
+      return {
+        success: false,
+        error: error.message
+      };
+    }
+  }
+
+  // 添加网络
+  async addNetwork(chainId) {
+    try {
+      const networkConfigs = {
+        1: {
+          chainId: '0x1',
+          chainName: 'Ethereum Mainnet',
+          nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 },
+          rpcUrls: ['https://mainnet.infura.io/v3/'],
+          blockExplorerUrls: ['https://etherscan.io']
+        },
+        56: {
+          chainId: '0x38',
+          chainName: 'BSC Mainnet',
+          nativeCurrency: { name: 'BNB', symbol: 'BNB', decimals: 18 },
+          rpcUrls: ['https://bsc-dataseed.binance.org/'],
+          blockExplorerUrls: ['https://bscscan.com']
+        },
+        10: {
+          chainId: '0xA',
+          chainName: 'Optimism',
+          nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 },
+          rpcUrls: ['https://mainnet.optimism.io'],
+          blockExplorerUrls: ['https://optimistic.etherscan.io']
+        },
+        137: {
+          chainId: '0x89',
+          chainName: 'Polygon Mainnet',
+          nativeCurrency: { name: 'MATIC', symbol: 'MATIC', decimals: 18 },
+          rpcUrls: ['https://polygon-rpc.com/'],
+          blockExplorerUrls: ['https://polygonscan.com']
+        },
+        42161: {
+          chainId: '0xA4B1',
+          chainName: 'Arbitrum One',
+          nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 },
+          rpcUrls: ['https://arb1.arbitrum.io/rpc'],
+          blockExplorerUrls: ['https://arbiscan.io']
+        }
+      };
+
+      const networkConfig = networkConfigs[chainId];
+      if (!networkConfig) {
+        throw new Error('不支持的网络配置');
+      }
+
+      const result = await this.provider.request({
+        method: 'wallet_addEthereumChain',
+        params: [networkConfig]
+      });
+
+      this.chainId = chainId;
+      console.log('网络添加成功，chainId:', chainId);
+      return {
         success: true,
-        transactions: [],
-        address: targetAddress,
-        message: '交易历史功能暂未支持，请在钱包应用中查看'
+        chainId: chainId
       };
     } catch (error) {
-      console.error('获取交易历史失败:', error);
+      console.error('添加网络失败:', error);
+      return {
+        success: false,
+        error: error.message
+      };
+    }
+  }
+
+  // 添加代币到钱包
+  async addToken(tokenAddress, tokenSymbol, tokenDecimals, tokenImage) {
+    try {
+      if (!this.provider) {
+        throw new Error('钱包未连接');
+      }
+
+      if (this.provider.request) {
+        const result = await this.provider.request({
+          method: 'wallet_watchAsset',
+          params: {
+            type: 'ERC20',
+            options: {
+              address: tokenAddress,
+              symbol: tokenSymbol,
+              decimals: tokenDecimals,
+              image: tokenImage
+            }
+          }
+        });
+        
+        return {
+          success: true,
+          result: result
+        };
+      } else {
+        throw new Error('当前钱包不支持添加代币');
+      }
+    } catch (error) {
+      console.error('添加代币失败:', error);
+      return {
+        success: false,
+        error: error.message
+      };
+    }
+  }
+
+  // 获取代币余额
+  async getTokenBalance(tokenAddress, accountAddress) {
+    try {
+      if (!this.isConnected || !this.provider) {
+        throw new Error('钱包未连接');
+      }
+
+      const targetAddress = accountAddress || this.account;
+      
+      // ERC-20 balanceOf方法的函数签名
+      const balanceOfMethodSignature = '0x70a08231';
+      
+      // 构造balanceOf方法的参数
+      const addressPadded = targetAddress.slice(2).padStart(64, '0');
+      const data = balanceOfMethodSignature + addressPadded;
+      
+      if (this.provider.request) {
+        const result = await this.provider.request({
+          method: 'eth_call',
+          params: [{
+            to: tokenAddress,
+            data: data
+          }, 'latest']
+        });
+        
+        // 解析结果
+        let tokenBalance = 0;
+        if (result && result !== '0x') {
+          const balanceHex = result.startsWith('0x') ? result : '0x' + result;
+          const balanceWei = BigInt(balanceHex);
+          tokenBalance = Number(balanceWei) / Math.pow(10, 18); // 假设18位小数
+        }
+        
+        return {
+          success: true,
+          balance: tokenBalance,
+          address: targetAddress,
+          tokenAddress: tokenAddress
+        };
+      } else {
+        throw new Error('当前钱包不支持代币余额查询');
+      }
+    } catch (error) {
+      console.error('获取代币余额失败:', error);
       return {
         success: false,
         error: error.message,
-        transactions: []
+        balance: '0'
       };
+    }
+  }
+
+  // 事件监听器
+  onAccountsChanged(callback) {
+    if (this.provider && this.provider.on) {
+      this.provider.on('accountsChanged', callback);
+    }
+  }
+
+  onChainChanged(callback) {
+    if (this.provider && this.provider.on) {
+      this.provider.on('chainChanged', callback);
+    }
+  }
+
+  onConnect(callback) {
+    if (this.provider && this.provider.on) {
+      this.provider.on('connect', callback);
+    }
+  }
+
+  onDisconnect(callback) {
+    if (this.provider && this.provider.on) {
+      this.provider.on('disconnect', callback);
     }
   }
 }

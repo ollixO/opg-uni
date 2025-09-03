@@ -68,5 +68,20 @@
     "uniStatistics" : {
         "enable" : false
     },
-    "vueVersion" : "3"
+    "vueVersion" : "3",
+    /* H5特有相关 */
+    "h5" : {
+        "devServer" : {
+            "proxy" : {
+                "/api" : {
+                    "target" : "https://opg.easyenjoy.world",
+                    "changeOrigin" : true,
+                    "secure" : true
+                }
+            }
+        },
+        "router" : {
+            "mode" : "hash"
+        }
+    }
 }

@@ -1,0 +1,153 @@
+// ���ܺ�Լ�����ļ� - ��̫���汾
+export const CONTRACTS = {
+  // ��ֵ��Լ����
+  RECHARGE: {
+    // ��̫��������Լ��ַ
+    MAINNET: {
+      address: '0x1234567890abcdef1234567890abcdef12345678', // �滻Ϊ��ʵ����̫��������Լ��ַ
+      networkId: 1, // ��̫������
+      networkName: 'Ethereum Mainnet',
+      chainId: 1
+    },
+    // ��̫����������Լ��ַ
+    TESTNET: {
+      address: '0xabcdef1234567890abcdef1234567890abcdef12', // �滻Ϊ��ʵ����̫����������Լ��ַ
+      networkId: 5, // Goerli������
+      networkName: 'Ethereum Goerli',
+      chainId: 5
+    }
+  },
+  
+  // ������Լ����
+  TOKEN: {
+    MAINNET: {
+      address: '0x9876543210fedcba9876543210fedcba98765432', // ��Ŀ���Һ�Լ��ַ
+      networkId: 1,
+      networkName: 'Ethereum Mainnet',
+      chainId: 1
+    },
+    TESTNET: {
+      address: '0xfedcba9876543210fedcba9876543210fedcba98',
+      networkId: 5,
+      networkName: 'Ethereum Goerli',
+      chainId: 5
+    }
+  }
+};
+
+// ��̫����������
+export const ETHEREUM_NETWORKS = {
+  MAINNET: {
+    chainId: 1,
+    name: 'Ethereum Mainnet',
+    rpcUrl: 'https://mainnet.infura.io/v3/YOUR_PROJECT_ID',
+    blockExplorer: 'https://etherscan.io',
+    nativeCurrency: {
+      name: 'Ether',
+      symbol: 'ETH',
+      decimals: 18
+    }
+  },
+  GOERLI: {
+    chainId: 5,
+    name: 'Goerli Testnet',
+    rpcUrl: 'https://goerli.infura.io/v3/YOUR_PROJECT_ID',
+    blockExplorer: 'https://goerli.etherscan.io',
+    nativeCurrency: {
+      name: 'Goerli Ether',
+      symbol: 'ETH',
+      decimals: 18
+    }
+  }
+};
+
+// ��ԼABI���� - ��̫���汾
+export const CONTRACT_ABI = {
+  // ��ֵ��ԼABI
+  RECHARGE: [
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "amount",
+          "type": "uint256"
+        }
+      ],
+      "name": "recharge",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "payable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "user",
+          "type": "address"
+        }
+      ],
+      "name": "getBalance",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "amount",
+          "type": "uint256"
+        }
+      ],
+      "name": "withdraw",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    }
+  ]
+};
+
+// ��ȡ��ǰ��������
+export function getCurrentNetwork() {
+  // �����û�ѡ��򻷾�������ȷ��
+  // Ĭ��ʹ����������Ϊ�����ӵ�����̫��������
+  return 'MAINNET'; // �� 'TESTNET'
+}
+
+// ��ȡ��ֵ��Լ��ַ
+export function getRechargeContractAddress() {
+  const network = getCurrentNetwork();
+  return CONTRACTS.RECHARGE[network].address;
+}
+
+// ��ȡ��ֵ��Լ����
+export function getRechargeContractConfig() {
+  const network = getCurrentNetwork();
+  return {
+    ...CONTRACTS.RECHARGE[network],
+    abi: CONTRACT_ABI.RECHARGE
+  };
+}
+
+// ��ȡ��̫����������
+export function getEthereumNetworkConfig() {
+  const network = getCurrentNetwork();
+  return ETHEREUM_NETWORKS[network === 'MAINNET' ? 'MAINNET' : 'GOERLI'];
+}
+
+// �����л�����
+  export function switchNetwork(networkType) {
+  return networkType;
+}

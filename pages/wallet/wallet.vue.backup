@@ -1,4 +1,4 @@
-﻿<template>
+<template>
 	<view class="wallet-page">
 		<!-- 顶部状态栏 -->
 		
@@ -15,7 +15,7 @@
 				</view>
 				<view class="balance-display" @click="refreshBalance">
 					<text class="balance-text">余额:</text>
-					<text class="balance-value">{{ balance }} U</text>
+					<text class="balance-value">{{ balance }}</text>
 					<text class="add-icon">{{ refreshing ? '⟳' : '+' }}</text>
 				</view>
 				<view class="action-icons" >
@@ -198,7 +198,7 @@
 			// 加载余额
 			async loadBalance() {
 				try {
-					const result = await walletManager.getUSDTBalance(this.walletAddress);
+					const result = await walletManager.getBalance();
 					if (result.success) {
 						this.balance = result.balance;
 						console.log('余额加载成功:', this.balance);
@@ -590,4 +590,3 @@
 		z-index: 9998;
 	}
 </style> 
-

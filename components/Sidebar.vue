@@ -1,11 +1,8 @@
 <template>
-	<view v-if="isOpen" class="sidebar sidebar-open">
+	<view v-if="isOpen" class="sidebar">
 		<!-- 顶部装饰元素 -->
 		<view class="top-decoration">
-			<view class="checkerboard">
-				<view class="checker-item" v-for="i in 8" :key="i"></view>
-			</view>
-			<view class="arrow-down">▼</view>
+			<image src="/static/s1.png" mode="aspectFit" class="decoration-image"></image>
 		</view>
 		
 		<!-- 菜单项 -->
@@ -30,10 +27,7 @@
 		
 		<!-- 底部装饰元素 -->
 		<view class="bottom-decoration">
-			<view class="checkerboard">
-				<view class="checker-item" v-for="i in 8" :key="i"></view>
-			</view>
-			<view class="arrow-up">▲</view>
+			<image src="/static/s2.png" mode="aspectFit" class="decoration-image"></image>
 		</view>
 	</view>
 </template>
@@ -50,12 +44,12 @@ export default {
 	data() {
 		return {
 			menuItems: [
-				{ text: '首页', icon: '../../static/x1.png', action: 'home' },
-				{ text: '节点认购', icon: '../../static/x2.png', action: 'node' },
-				{ text: '邀请好友', icon: '../../static/x3.png', action: 'invite' },
-				{ text: '个人中心', icon: '../../static/x4.png', action: 'profile' },
-				{ text: '充值', icon: '../../static/x5.png', action: 'recharge' },
-				{ text: '记录', icon: '../../static/x6.png', action: 'records' }
+				{ text: '首页', icon: '/static/x1.png', action: 'home' },
+				{ text: '节点认购', icon: '/static/x2.png', action: 'node' },
+				{ text: '邀请好友', icon: '/static/x3.png', action: 'invite' },
+				{ text: '个人中心', icon: '/static/x4.png', action: 'profile' },
+				{ text: '充值', icon: '/static/x5.png', action: 'recharge' },
+				{ text: '记录', icon: '/static/x6.png', action: 'records' }
 			]
 		}
 	},
@@ -86,9 +80,8 @@ export default {
 					});
 					break;
 				case 'invite':
-					uni.showToast({
-						title: '邀请好友功能开发中',
-						icon: 'none'
+					uni.navigateTo({
+						url: '/pages/wallet/invitation'
 					});
 					break;
 				case 'profile':
@@ -98,9 +91,8 @@ export default {
 					});
 					break;
 				case 'recharge':
-					uni.showToast({
-						title: '充值功能开发中',
-						icon: 'none'
+					uni.navigateTo({
+						url: '/pages/wallet/recharge'
 					});
 					break;
 				case 'records':
@@ -133,42 +125,26 @@ export default {
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	padding: 20rpx 0;
+	padding: 30rpx 0;
 	position: relative;
 }
 
-.checkerboard {
-	display: flex;
-	gap: 2rpx;
-}
-
-.checker-item {
-	width: 20rpx;
-	height: 20rpx;
-	background: #ff0000;
-}
-
-.checker-item:nth-child(even) {
-	background: #000000;
-}
-
-.arrow-down {
-	color: #ff0000;
-	font-size: 32rpx;
-	font-weight: bold;
-	margin-left: 20rpx;
+.decoration-image {
+	width: 480rpx;
+	height: 160rpx;
 }
 
 /* 菜单项 */
 .menu-items {
 	flex: 1;
 	padding: 40rpx 20rpx;
+    
 }
 
 .menu-item {
 	display: flex;
-	align-items: center;
 	gap: 20rpx;
+    text-align: center;
 	padding: 30rpx 20rpx;
 	margin-bottom: 20rpx;
 	border-radius: 15rpx;
@@ -179,7 +155,7 @@ export default {
 	background: rgba(255, 255, 255, 0.1);
 }
 
-.menu-icon image{
+.menu-icon {
 	width: 60rpx;
 	height: 60rpx;
 	border-radius: 50%;
@@ -188,8 +164,10 @@ export default {
 	justify-content: center;
 	overflow: hidden;
 }
-
-.
+.menu-icon image {
+	width: 100%;
+	height: 100%;
+}
 .icon-image {
 	width: 40rpx;
 	height: 40rpx;
@@ -218,14 +196,7 @@ export default {
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	padding: 20rpx 0;
+	padding: 30rpx 0;
 	position: relative;
-}
-
-.arrow-up {
-	color: #ff0000;
-	font-size: 32rpx;
-	font-weight: bold;
-	margin-left: 20rpx;
 }
 </style> 
