@@ -55,7 +55,7 @@
 			<view class="recharge-section">
 				<image 
 					class="recharge-btn" 
-					src="../../static/chongzhi.png" 
+					src="@/static/chongzhi.png" 
 					@click="handleRecharge" 
 					:class="{ disabled: !canRecharge }"
 				></image>
@@ -65,9 +65,9 @@
 </template>
 
 <script>
-import NavBar from '../../components/NavBar.vue';
-import walletManager from '../../utils/wallet-manager.js';
-import { getRechargeContractConfig, getCurrentNetwork } from '../../config/contracts.js';
+import NavBar from '@/components/NavBar.vue';
+import walletManager from '@/utils/wallet-manager.js';
+import { getRechargeContractConfig, getCurrentNetwork } from '@/config/contracts.js';
 
 export default {
 	name: 'Recharge',
@@ -394,7 +394,7 @@ export default {
 <style scoped>
 .recharge-page {
 	min-height: 100vh;
-	background-image: url('../../static/back.png');
+	background-image: url(@/static/back.png);
 	background-size: cover;
 	background-position: center;
 	background-repeat: no-repeat;

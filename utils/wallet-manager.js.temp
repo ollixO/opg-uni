@@ -1,6 +1,6 @@
 // Ǯ�������� - ֧����̫��
-import walletService from './wallet.js';
-import walletH5Service from './wallet-h5.js';
+import walletService from '@/utils/wallet.js';
+import walletH5Service from '@/utils/wallet-h5.js';
 
 class WalletManager {
   constructor() {
@@ -11,7 +11,7 @@ class WalletManager {
 
   // ��ʼ��Ǯ������
   init() {
-    // ���ݻ���ѡ�����?    if (this.isEthereumEnvironment()) {
+    // ���ݻ���ѡ�����?    if (this.isEthereumEnvironment()) {
       // ��̫������ʹ����̫��Ǯ��
       this.currentService = walletH5Service; // ʹ�����е�H5���񣬵��޸�Ϊ֧����̫��
       this.serviceType = 'Ethereum';
@@ -29,8 +29,8 @@ class WalletManager {
     }
   }
 
-  // ����Ƿ�Ϊ��̫������?  isEthereumEnvironment() {
-    // ����Ƿ�װ����̫��Ǯ��?    return typeof window !== 'undefined' && window.ethereum;
+  // ����Ƿ�Ϊ��̫������?  isEthereumEnvironment() {
+    // ����Ƿ�װ����̫��Ǯ��?    return typeof window !== 'undefined' && window.ethereum;
   }
 
   // ����Ƿ�ΪH5����
@@ -49,11 +49,11 @@ class WalletManager {
     return this.serviceType;
   }
 
-  // ���TPǮ���Ƿ����?  async detectTPWallet() {
+  // ���TPǮ���Ƿ����?  async detectTPWallet() {
     try {
       return await this.currentService.detectTPWallet();
     } catch (error) {
-      console.error('���Ǯ��ʧ��?', error);
+      console.error('���Ǯ��ʧ��?', error);
       return false;
     }
   }
@@ -78,9 +78,9 @@ class WalletManager {
       
       if (error.message.includes('�û��ܾ�')) {
         errorMessage = '�û��ܾ�������Ǯ��';
-        suggestions = '����Ǯ���е��?����"��"ȷ��"';
-      } else if (error.message.includes('δ���?)) {
-        errorMessage = 'δ��⵽Ǯ��?;
+        suggestions = '����Ǯ���е��?����"��"ȷ��"';
+      } else if (error.message.includes('δ���?)) {
+        errorMessage = 'δ��⵽Ǯ��?;
         suggestions = '��ȷ���Ѱ�װǮ��Ӧ�ò�ˢ��ҳ��';
       }
       
@@ -93,7 +93,7 @@ class WalletManager {
     }
   }
 
-  // ��ȡ�˻����?  async getBalance(address = null) {
+  // ��ȡ�˻����?  async getBalance(address = null) {
     try {
       const result = await this.currentService.getBalance(address);
       
@@ -105,7 +105,7 @@ class WalletManager {
       
       return result;
     } catch (error) {
-      console.error('��ȡ���ʧ��?', error);
+      console.error('��ȡ���ʧ��?', error);
       return {
         success: false,
         error: error.message
@@ -137,7 +137,7 @@ class WalletManager {
       }
       
       const networkInfo = this.currentService.getNetworkInfo();
-      console.log('Ǯ�������ȡ�������?', networkInfo);
+      console.log('Ǯ�������ȡ�������?', networkInfo);
       
       return networkInfo;
     } catch (error) {
@@ -172,11 +172,11 @@ class WalletManager {
     }
   }
 
-  // ��ȡ�������?  async getTokenBalance(tokenAddress, accountAddress) {
+  // ��ȡ�������?  async getTokenBalance(tokenAddress, accountAddress) {
     try {
       return await this.currentService.getTokenBalance(tokenAddress, accountAddress);
     } catch (error) {
-      console.error('��ȡ�������ʧ��?', error);
+      console.error('��ȡ�������ʧ��?', error);
       return {
         success: false,
         error: error.message,
@@ -184,15 +184,15 @@ class WalletManager {
       };
     }
   }
-  // ��ȡUSDT���?  async getUSDTBalance(address = null) {
+  // ��ȡUSDT���?  async getUSDTBalance(address = null) {
     try {
       const result = await this.currentService.getUSDTBalance(address);
       return result;
     } catch (error) {
-      console.error('��ȡUSDT���ʧ��?', error);
+      console.error('��ȡUSDT���ʧ��?', error);
       return {
         success: false,
-        error: (error && error.message) ? error.message : '��ȡUSDT���ʧ��?,
+        error: (error && error.message) ? error.message : '��ȡUSDT���ʧ��?,
         balance: 0
       };
     }
@@ -273,7 +273,7 @@ class WalletManager {
     return ethAddressRegex.test(address);
   }
 
-  // ��ȡ���������������?  getExplorerUrl(txHash, type = 'tx') {
+  // ��ȡ���������������?  getExplorerUrl(txHash, type = 'tx') {
     const baseUrl = 'https://etherscan.io';
     switch (type) {
       case 'tx':
@@ -299,7 +299,7 @@ class WalletManager {
       userMessage = '�ڲ�����';
     } else if (error.message) {
       if (error.message.includes('insufficient funds')) {
-        userMessage = '����?;
+        userMessage = '����?;
       } else if (error.message.includes('gas')) {
         userMessage = 'Gas���ô���';
       } else if (error.message.includes('network')) {

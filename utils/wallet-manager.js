@@ -1,6 +1,6 @@
 // Ǯ�������� - ֧����̫��
-import walletService from './wallet.js';
-import walletH5Service from './wallet-h5.js';
+import walletService from '@/utils/wallet.js';
+import walletH5Service from '@/utils/wallet-h5.js';
 
 class WalletManager {
   constructor() {

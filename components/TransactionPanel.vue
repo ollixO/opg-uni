@@ -49,7 +49,7 @@
 </template>
 
 <script>
-import walletManager from '../utils/wallet-manager.js';
+import walletManager from '@/utils/wallet-manager.js';
 
 export default {
   name: 'TransactionPanel',

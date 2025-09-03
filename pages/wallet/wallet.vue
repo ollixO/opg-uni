@@ -19,7 +19,7 @@
 					<text class="add-icon">{{ refreshing ? '⟳' : '+' }}</text>
 				</view>
 				<view class="action-icons" >
-					<image class="icon" src="../../static/right.png" @click="toggleSidebar"></image>
+					<image class="icon" src="@/static/right.png" @click="toggleSidebar"></image>
 				</view>
 			</view>
 		</view>
@@ -41,7 +41,7 @@
 						<text class="time-per-session">{{ item.timePerSession }}</text>
 						<text class="remaining-quota">剩余额度:{{ item.remainingQuota }}</text>
 					</view>
-					<image class="open-btn" src="../../static/kaifang.png" @click="openLobby(item)"></image>
+					<image class="open-btn" src="@/static/kaifang.png" @click="openLobby(item)"></image>
 				</view>
 			</view>
 		</view>
@@ -64,8 +64,8 @@
 </template>
 
 <script>
-	import walletManager from '../../utils/wallet-manager.js';
-	import Sidebar from '../../components/Sidebar.vue';
+	import walletManager from '@/utils/wallet-manager.js';
+	import Sidebar from '@/components/Sidebar.vue';
 	
 	export default {
 		components: {
@@ -329,7 +329,7 @@
 <style>
 	.wallet-page {
 		min-height: 100vh;
-		background-image: url('../../static/back.png');
+		background-image: url(@/static/back.png);
 		background-size: cover;
 		background-position: center;
 		background-repeat: no-repeat;

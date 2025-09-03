@@ -1,12 +1,12 @@
 <template>
 	<view class="content">
 		<!-- 背景图 -->
-		<image class="background-image" src="/static/register.png" mode="aspectFill"></image>
+		<image class="background-image" src="@/static/register.png" mode="aspectFill"></image>
 		
 		<!-- 连接钱包按钮 -->
 		<view class="connect-button-container">
 			<button class="connect-button" @click="connectWallet">
-				<image class="button-image" src="/static/register1.png" mode="aspectFit"></image>
+				<image class="button-image" src="@/static/register1.png" mode="aspectFit"></image>
 			</button>
 		</view>
 		
@@ -23,8 +23,8 @@
 </template>
 
 <script>
-	import walletManager from '../../utils/wallet-manager.js';
-	import ajax from '../../utils/ajax.js';
+	import walletManager from '@/utils/wallet-manager.js';
+	import ajax from '@/utils/ajax.js';
 	
 	export default {
 		data() {

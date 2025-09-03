@@ -1,5 +1,5 @@
 ﻿// TP钱包服务模块
-import { getUSDTContractConfig, getUSDTContractByChainId } from '../config/contracts.js';
+import { getUSDTContractConfig, getUSDTContractByChainId } from '@/config/contracts.js';
 
 class TPWalletH5Service {
   constructor() {

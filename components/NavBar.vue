@@ -1,11 +1,11 @@
 <template>
 	<view class="nav-bar">
 		<view class="back-btn" @click="goBack">
-			<image class="back-icon" src="../static/left.png"></image>
+			<image class="back-icon" src="@/static/left.png"></image>
 		</view>
 		<text class="page-title">{{ title }}</text>
 		<view class="menu-btn" @click="toggleMenu" v-if="showMenu">
-			<image class="menu-icon" src="../static/right.png"></image>
+			<image class="menu-icon" src="@/static/right.png"></image>
 		</view>
 	</view>
 </template>

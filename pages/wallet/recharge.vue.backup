@@ -1,12 +1,12 @@
 <template>
 	<view class="recharge-page">
 		
-		<!-- 顶部导航�?-->
-		<NavBar title="充�? />
+		<!-- 顶部导航�?-->
+		<NavBar title="充�? />
 		
-		<!-- 钱包连接状态提�?-->
+		<!-- 钱包连接状态提�?-->
 		<view v-if="!walletConnected" class="connection-notice">
-			<text class="notice-text">钱包未连�?/text>
+			<text class="notice-text">钱包未连�?/text>
 			<button class="connect-btn" @click="goToConnect">连接钱包</button>
 		</view>
 		
@@ -14,7 +14,7 @@
 		<view class="main-content">
 			<!-- 输入提示 -->
 			<view class="input-section">
-				<text class="input-label">请填写数�?/text>
+				<text class="input-label">请填写数�?/text>
 				<view class="amount-input">
 					<text class="currency-symbol">$</text>
 					<input 
@@ -33,9 +33,9 @@
 				<text class="balance-text">当前余额: {{ currentBalance }}</text>
 			</view>
 			
-			<!-- 最低金额提�?-->
+			<!-- 最低金额提�?-->
 			<view class="min-amount-notice">
-				<text class="notice-text">*最�?0�?/text>
+				<text class="notice-text">*最�?0�?/text>
 			</view>
 			
 			<!-- 预设金额按钮 -->
@@ -51,11 +51,11 @@
 				</view>
 			</view>
 			
-			<!-- 充值按�?-->
+			<!-- 充值按�?-->
 			<view class="recharge-section">
 				<image 
 					class="recharge-btn" 
-					src="../../static/chongzhi.png" 
+					src="@/static/chongzhi.png" 
 					@click="handleRecharge" 
 					:class="{ disabled: !canRecharge }"
 				></image>
@@ -65,9 +65,9 @@
 </template>
 
 <script>
-import NavBar from '../../components/NavBar.vue';
-import walletManager from '../../utils/wallet-manager.js';
-import { getRechargeContractConfig, getCurrentNetwork } from '../../config/contracts.js';
+import NavBar from '@/components/NavBar.vue';
+import walletManager from '@/utils/wallet-manager.js';
+import { getRechargeContractConfig, getCurrentNetwork } from '@/config/contracts.js';
 
 export default {
 	name: 'Recharge',
@@ -92,32 +92,32 @@ export default {
 		}
 	},
 	onLoad() {
-		console.log('充值页面加�?);
+		console.log('充值页面加�?);
 		this.initContractConfig();
 		this.checkWalletStatus();
 	},
 	onShow() {
-		console.log('充值页面显�?);
+		console.log('充值页面显�?);
 		this.checkWalletStatus();
 	},
 	methods: {
-		// 初始化合约配�?		initContractConfig() {
+		// 初始化合约配�?		initContractConfig() {
 			try {
 				this.currentNetwork = getCurrentNetwork();
 				this.contractConfig = getRechargeContractConfig();
-				console.log('合约配置初始�?', this.contractConfig);
+				console.log('合约配置初始�?', this.contractConfig);
 			} catch (error) {
-				console.error('初始化合约配置失�?', error);
+				console.error('初始化合约配置失�?', error);
 				uni.showToast({
-					title: '合约配置初始化失�?,
+					title: '合约配置初始化失�?,
 					icon: 'none'
 				});
 			}
 		},
-		// 检查钱包状�?		async checkWalletStatus() {
+		// 检查钱包状�?		async checkWalletStatus() {
 			try {
 				const networkInfo = await walletManager.getNetworkInfo();
-				console.log('充值页面检查钱包状�?', networkInfo);
+				console.log('充值页面检查钱包状�?', networkInfo);
 				
 				if (networkInfo.isConnected && networkInfo.account) {
 					this.walletConnected = true;
@@ -130,7 +130,7 @@ export default {
 					this.currentBalance = 0;
 				}
 			} catch (error) {
-				console.error('检查钱包状态失�?', error);
+				console.error('检查钱包状态失�?', error);
 				this.walletConnected = false;
 				this.walletAddress = '';
 				this.currentBalance = 0;
@@ -171,7 +171,7 @@ export default {
 			this.rechargeAmount = value.replace(/[^\d.]/g, '');
 		},
 		
-		// 处理充�?		handleRecharge() {
+		// 处理充�?		handleRecharge() {
 			if (!this.walletConnected) {
 				uni.showToast({
 					title: '请先连接钱包',
@@ -182,7 +182,7 @@ export default {
 			
 			if (!this.canRecharge) {
 				uni.showToast({
-					title: '请输入有效金额（最�?0�?,
+					title: '请输入有效金额（最�?0�?,
 					icon: 'none'
 				});
 				return;
@@ -190,8 +190,8 @@ export default {
 			
 			const amount = parseFloat(this.rechargeAmount);
 			uni.showModal({
-				title: '确认充�?,
-				content: `确认充�?${amount} TRX 吗？\n\n注意：充值将通过区块链交易进行，请确保网络稳定。`,
+				title: '确认充�?,
+				content: `确认充�?${amount} TRX 吗？\n\n注意：充值将通过区块链交易进行，请确保网络稳定。`,
 				success: (res) => {
                 console.log(res);
 					if (res.confirm) {
@@ -201,39 +201,39 @@ export default {
 			});
 		},
 		
-		// 执行充值（通过智能合约�?		async processRecharge(amount) {
+		// 执行充值（通过智能合约�?		async processRecharge(amount) {
 			uni.showLoading({
 				title: '充值中...'
 			});
 			
 			try {
-				// 检查钱包服务状�?				if (!walletManager.currentService) {
+				// 检查钱包服务状�?				if (!walletManager.currentService) {
 					throw new Error('钱包服务未初始化，请重新连接钱包');
 				}
 				
-				// 检查钱包连接状�?				const networkInfo = await walletManager.getNetworkInfo();
+				// 检查钱包连接状�?				const networkInfo = await walletManager.getNetworkInfo();
 				if (!networkInfo.isConnected || !networkInfo.account) {
 					throw new Error('钱包未连接，请先连接钱包');
 				}
 				
-				// 检查合约配�?				if (!this.contractConfig || !this.contractConfig.address) {
-					throw new Error('充值合约未配置，请联系管理�?);
+				// 检查合约配�?				if (!this.contractConfig || !this.contractConfig.address) {
+					throw new Error('充值合约未配置，请联系管理�?);
 				}
 				
 				console.log('开始充值流程，金额:', amount, 'TRX');
 				console.log('使用合约:', this.contractConfig.address);
 				console.log('当前网络:', this.currentNetwork);
 				
-				// 调用智能合约进行充�?				const result = await this.callRechargeContract(amount);
+				// 调用智能合约进行充�?				const result = await this.callRechargeContract(amount);
 				
 				if (result.success) {
-					// 充值成�?					uni.hideLoading();
+					// 充值成�?					uni.hideLoading();
 					uni.showToast({
-						title: '充值成�?,
+						title: '充值成�?,
 						icon: 'success'
 					});
 					
-					// 清空输入�?					this.rechargeAmount = '';
+					// 清空输入�?					this.rechargeAmount = '';
 					
 					// 更新余额
 					await this.loadCurrentBalance();
@@ -241,32 +241,32 @@ export default {
 					// 显示成功信息
 					setTimeout(() => {
 						uni.showModal({
-							title: '充值成�?,
-							content: `成功充�?${amount} TRX\n\n交易哈希: ${result.txHash}\n\n网络: ${this.contractConfig.networkName}\n\n余额已更新`,
+							title: '充值成�?,
+							content: `成功充�?${amount} TRX\n\n交易哈希: ${result.txHash}\n\n网络: ${this.contractConfig.networkName}\n\n余额已更新`,
 							showCancel: false,
 							success: () => {
-								// 可以选择返回上一�?								// uni.navigateBack();
+								// 可以选择返回上一�?								// uni.navigateBack();
 							}
 						});
 					}, 1000);
 					
 				} else {
-					throw new Error(result.error || '充值失�?);
+					throw new Error(result.error || '充值失�?);
 				}
 				
 			} catch (error) {
 				uni.hideLoading();
 				uni.showToast({
-					title: error.message || '充值失败，请重�?,
+					title: error.message || '充值失败，请重�?,
 					icon: 'none'
 				});
-				console.error('充值失�?', error);
+				console.error('充值失�?', error);
 			}
 		},
 		
-		// 调用充值合�?		async callRechargeContract(amount) {
+		// 调用充值合�?		async callRechargeContract(amount) {
 			try {
-				console.log('调用充值合约开�?);
+				console.log('调用充值合约开�?);
 				
 				// 构建合约调用数据
 				const contractData = this.buildContractCallData(amount);
@@ -283,7 +283,7 @@ export default {
 					return {
 						success: true,
 						txHash: result.txId || result.txHash,
-						message: '充值合约调用成�?
+						message: '充值合约调用成�?
 					};
 				} else {
 					return {
@@ -293,7 +293,7 @@ export default {
 				}
 				
 			} catch (error) {
-				console.error('调用充值合约失�?', error);
+				console.error('调用充值合约失�?', error);
 				return {
 					success: false,
 					error: error.message || '合约调用失败'
@@ -304,7 +304,7 @@ export default {
 		// 构建合约调用数据
 		buildContractCallData(amount) {
 			try {
-				// 这里应该根据合约ABI构建正确的调用数�?				// 由于TRON网络的特殊性，可能需要使用tronWeb或其他方�?				
+				// 这里应该根据合约ABI构建正确的调用数�?				// 由于TRON网络的特殊性，可能需要使用tronWeb或其他方�?				
 				// 示例：构建充值方法的调用数据
 				const methodSignature = 'recharge(uint256)';
 				const amountHex = '0x' + (amount * 1000000).toString(16).padStart(64, '0');
@@ -326,19 +326,19 @@ export default {
 			}
 		},
 		
-		// 跳转到连接钱包页�?		goToConnect() {
-			// 直接在当前页面连接钱�?			this.connectWallet();
+		// 跳转到连接钱包页�?		goToConnect() {
+			// 直接在当前页面连接钱�?			this.connectWallet();
 		},
 		
 		// 连接钱包
 		async connectWallet() {
-			console.log('开始连接钱�?);
+			console.log('开始连接钱�?);
 			try {
 				uni.showLoading({
-					title: '连接�?..'
+					title: '连接�?..'
 				});
 				
-				// 调试：检查钱包管理器状�?				console.log('钱包管理器状�?', {
+				// 调试：检查钱包管理器状�?				console.log('钱包管理器状�?', {
 					currentService: walletManager.currentService,
 					serviceType: walletManager.serviceType,
 					isConnected: walletManager.isConnected
@@ -354,9 +354,9 @@ export default {
 						icon: 'success'
 					});
 					
-					// 重新检查钱包状�?					await this.checkWalletStatus();
+					// 重新检查钱包状�?					await this.checkWalletStatus();
 					
-					// 调试：连接后的状�?					console.log('连接后钱包管理器状�?', {
+					// 调试：连接后的状�?					console.log('连接后钱包管理器状�?', {
 						currentService: walletManager.currentService,
 						serviceType: walletManager.serviceType,
 						isConnected: walletManager.isConnected
@@ -396,7 +396,7 @@ export default {
 <style scoped>
 .recharge-page {
 	min-height: 100vh;
-	background-image: url('../../static/back.png');
+	background-image: url(@/static/back.png);
 	background-size: cover;
 	background-position: center;
 	background-repeat: no-repeat;

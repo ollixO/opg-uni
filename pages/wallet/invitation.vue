@@ -9,14 +9,14 @@
 		<view class="main-content">
 			<!-- 问号方块图形 -->
 			<view class="question-block-container">
-				<image src="/static/x7.png" mode="aspectFit" class="question-block-image"></image>
+				<image src="@/static/x7.png" mode="aspectFit" class="question-block-image"></image>
 			</view>
 			
 			<!-- 邀请卡片 -->
 			<view class="invitation-card">
 				<!-- 卡片头部金色横幅 -->
 				<view class="card-header">
-					<image src="/static/x8.png" mode="aspectFit" class="card-title-image"></image>
+					<image src="@/static/x8.png" mode="aspectFit" class="card-title-image"></image>
 				</view>
 				
 				<!-- 卡片内容 -->
@@ -30,7 +30,7 @@
 					</view>
 					
 					<button class="copy-link-btn" @click="copyInviteLink">
-						<image src="/static/x9.png" mode="aspectFit" class="copy-btn-image"></image>
+						<image src="@/static/x9.png" mode="aspectFit" class="copy-btn-image"></image>
 					</button>
 				</view>
 			</view>
@@ -52,8 +52,8 @@
 </template>
 
 <script>
-import NavBar from "../../components/NavBar.vue";
-import Sidebar from "../../components/Sidebar.vue";
+import NavBar from "@/components/NavBar.vue";
+import Sidebar from "@/components/Sidebar.vue";
 
 export default {
 	data() {

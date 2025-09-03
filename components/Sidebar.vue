@@ -2,7 +2,7 @@
 	<view v-if="isOpen" class="sidebar">
 		<!-- 顶部装饰元素 -->
 		<view class="top-decoration">
-			<image src="/static/s1.png" mode="aspectFit" class="decoration-image"></image>
+			<image src="@/static/s1.png" mode="aspectFit" class="decoration-image"></image>
 		</view>
 		
 		<!-- 菜单项 -->
@@ -27,7 +27,7 @@
 		
 		<!-- 底部装饰元素 -->
 		<view class="bottom-decoration">
-			<image src="/static/s2.png" mode="aspectFit" class="decoration-image"></image>
+			<image src="@/static/s2.png" mode="aspectFit" class="decoration-image"></image>
 		</view>
 	</view>
 </template>
@@ -44,12 +44,12 @@ export default {
 	data() {
 		return {
 			menuItems: [
-				{ text: '首页', icon: '/static/x1.png', action: 'home' },
-				{ text: '节点认购', icon: '/static/x2.png', action: 'node' },
-				{ text: '邀请好友', icon: '/static/x3.png', action: 'invite' },
-				{ text: '个人中心', icon: '/static/x4.png', action: 'profile' },
-				{ text: '充值', icon: '/static/x5.png', action: 'recharge' },
-				{ text: '记录', icon: '/static/x6.png', action: 'records' }
+				{ text: '首页', icon: '@/static/x1.png', action: 'home' },
+				{ text: '节点认购', icon: '@/static/x2.png', action: 'node' },
+				{ text: '邀请好友', icon: '@/static/x3.png', action: 'invite' },
+				{ text: '个人中心', icon: '@/static/x4.png', action: 'profile' },
+				{ text: '充值', icon: '@/static/x5.png', action: 'recharge' },
+				{ text: '记录', icon: '@/static/x6.png', action: 'records' }
 			]
 		}
 	},

@@ -1,5 +1,5 @@
 // Ajax请求使用示例
-import ajax from './ajax.js';
+import ajax from '@/utils/ajax.js';
 
 // 示例：测试API连接
 async function testApiConnection() {

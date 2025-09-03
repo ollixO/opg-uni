@@ -1,0 +1,28 @@
+{
+  "name": "blockchain-uni-app",
+  "version": "1.0.0",
+  "description": "Blockchain uni-app project",
+  "main": "main.js",
+  "scripts": {
+    "dev:h5": "uni build --platform h5 --mode development",
+    "build:h5": "uni build --platform h5 --mode production",
+    "serve": "uni serve --platform h5"
+  },
+  "dependencies": {
+    "@dcloudio/uni-app": "^3.0.0",
+    "@dcloudio/uni-h5": "^3.0.0",
+    "@dcloudio/uni-mp-weixin": "^3.0.0",
+    "vue": "^3.0.0"
+  },
+  "devDependencies": {
+    "@dcloudio/vite-plugin-uni": "^3.0.0",
+    "vite": "^4.0.0"
+  },
+  "keywords": [
+    "uni-app",
+    "vue3",
+    "blockchain"
+  ],
+  "author": "",
+  "license": "MIT"
+}

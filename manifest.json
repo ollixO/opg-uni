@@ -71,6 +71,7 @@
     "vueVersion" : "3",
     /* H5特有相关 */
     "h5" : {
+        "publicPath" : "./",
         "devServer" : {
             "proxy" : {
                 "/api" : {
