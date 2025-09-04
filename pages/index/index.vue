@@ -10,6 +10,15 @@
 			</button>
 		</view>
 		
+		<!-- Loading状态 -->
+		<view v-if="loading" class="loading-section">
+			<view class="loading-card">
+				<view class="loading-spinner"></view>
+				<text class="loading-title">连接钱包中...</text>
+				<text class="loading-desc">请稍候，正在处理您的请求</text>
+			</view>
+		</view>
+
 		<!-- 连接成功提示 -->
 		<view v-if="walletConnected" class="success-section">
 			<view class="success-card">
@@ -156,6 +165,7 @@
 					});
 					console.log('用户注册结果:', result.data.userinfo.invite_code);
 					uni.setStorageSync('invite_code', result.data.userinfo.invite_code);
+					uni.setStorageSync('token', result.data.userinfo.token);
 				} catch (error) {
 					console.error('用户注册失败:', error);
 					uni.showToast({
@@ -245,6 +255,54 @@
 		display: block;
 		font-size: 28rpx;
 		color: rgba(255, 255, 255, 0.8);
+	}
+
+	.loading-section {
+		position: absolute;
+		top: 50%;
+		left: 50%;
+		transform: translate(-50%, -50%);
+		z-index: 20;
+		padding: 40rpx 20rpx;
+	}
+
+	.loading-card {
+		background: rgba(0, 0, 0, 0.8);
+		backdrop-filter: blur(15rpx);
+		border-radius: 20rpx;
+		padding: 60rpx 40rpx;
+		text-align: center;
+		border: 1rpx solid rgba(255, 255, 255, 0.2);
+		min-width: 300rpx;
+	}
+
+	.loading-spinner {
+		width: 60rpx;
+		height: 60rpx;
+		border: 4rpx solid rgba(255, 255, 255, 0.3);
+		border-top: 4rpx solid #4CAF50;
+		border-radius: 50%;
+		animation: spin 1s linear infinite;
+		margin: 0 auto 30rpx;
+	}
+
+	@keyframes spin {
+		0% { transform: rotate(0deg); }
+		100% { transform: rotate(360deg); }
+	}
+
+	.loading-title {
+		display: block;
+		font-size: 32rpx;
+		color: white;
+		font-weight: bold;
+		margin-bottom: 15rpx;
+	}
+
+	.loading-desc {
+		display: block;
+		font-size: 24rpx;
+		color: rgba(255, 255, 255, 0.7);
 	}
 
 

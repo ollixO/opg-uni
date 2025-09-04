@@ -11,10 +11,10 @@
 				</view>
 				<view class="user-details">
 					<text class="username">{{ formatAddress(walletAddress) || 'awm21萨法' }}</text>
-					<text class="user-id">ID: 105215</text>
+					<text class="user-id">{{ userLevel || '普通会员' }}</text>
 				</view>
 				<view class="balance-display" @click="refreshBalance">
-					<text class="balance-text">余额:</text>
+					<text class="balance-text">{{ balanceText }}:</text>
 					<text class="balance-value">{{ balance }} U</text>
 					<text class="add-icon">{{ refreshing ? '⟳' : '+' }}</text>
 				</view>
@@ -26,8 +26,8 @@
 		
 		<!-- 连接状态提示 -->
 		<view v-if="!walletConnected" class="connection-notice">
-			<text class="notice-text">钱包未连接</text>
-			<button class="connect-btn" @click="goToConnect">连接钱包</button>
+			<text class="notice-text">{{ walletDisconnectedText }}</text>
+			<button class="connect-btn" @click="goToConnect">{{ connectWalletText }}</button>
 		</view>
 		
 		<!-- 主要内容区域 - 3x3网格卡片 -->
@@ -52,6 +52,7 @@
 		<Sidebar 
 			:isOpen="sidebarOpen" 
 			@menu-click="handleSidebarMenuClick"
+			@language-changed="onLanguageChanged"
 		/>
 		
 		<!-- 遮罩层 -->
@@ -66,6 +67,8 @@
 <script>
 	import walletManager from '@/utils/wallet-manager.js';
 	import Sidebar from '@/components/Sidebar.vue';
+	import i18n from '@/utils/i18n.js';
+	import ajax from '@/utils/ajax.js';
 	
 	export default {
 		components: {
@@ -82,93 +85,176 @@
 				refreshing: false,
 				// 侧边栏状态
 				sidebarOpen: false,
+				// 国际化文本
+				balanceText: '余额',
+				walletDisconnectedText: '钱包未连接',
+				connectWalletText: '连接钱包',
 				
 				// 大厅卡片数据
-				lobbyCards: [
-					{
-						duration: '3分钟',
-						type: '大厅',
-						openTime: '开放时间',
-						timePerSession: '3分钟/次',
-						remainingQuota: 120,
-						buttonText: '开放'
-					},
-					{
-						duration: '3分钟',
-						type: '大厅',
-						openTime: '开放时间',
-						timePerSession: '3分钟/次',
-						remainingQuota: 120,
-						buttonText: '开放'
-					},
-					{
-						duration: '3分钟',
-						type: '大厅',
-						openTime: '开放时间',
-						timePerSession: '3分钟/次',
-						remainingQuota: 120,
-						buttonText: '开放'
-					},
-					{
-						duration: '3分钟',
-						type: '大厅',
-						openTime: '开放时间',
-						timePerSession: '3分钟/次',
-						remainingQuota: 120,
-						buttonText: '开放'
-					},
-					{
-						duration: '3分钟',
-						type: '大厅',
-						openTime: '开放时间',
-						timePerSession: '3分钟/次',
-						remainingQuota: 120,
-						buttonText: '开放'
-					},
-					{
-						duration: '3分钟',
-						type: '大厅',
-						openTime: '开放时间',
-						timePerSession: '3分钟/次',
-						remainingQuota: 120,
-						buttonText: '开放'
-					},
-					{
-						duration: '3分钟',
-						type: '大厅',
-						openTime: '开放时间',
-						timePerSession: '3分钟/次',
-						remainingQuota: 120,
-						buttonText: '开放'
-					},
-					{
-						duration: '3分钟',
-						type: '大厅',
-						openTime: '开放时间',
-						timePerSession: '3分钟/次',
-						remainingQuota: 120,
-						buttonText: '开放'
-					},
-					{
-						duration: '3分钟',
-						type: '大厅',
-						openTime: '开放时间',
-						timePerSession: '3分钟/次',
-						remainingQuota: 120,
-						buttonText: '开放'
-					}
-				]
+				lobbyCards: [],
+				
+				// 级别数据
+				level_name_list: {},
+				userLevel: '' // 用户级别显示
 			}
 		},
 		onLoad() {
 			console.log('钱包页面加载，检查连接状态...');
 			this.checkWalletStatus();
+			// 初始化国际化文本
+			this.updateI18nTexts();
+			// 监听语言切换事件
+			i18n.on('languageChanged', this.onLanguageChanged);
+			console.log('wallet页面已添加语言切换监听器');
+			// 获取用户级别信息
+			this.getUserLevel();
+			
 		},
 		onShow() {
 			console.log('钱包页面显示，检查钱包状态...');
 			this.checkWalletStatus();
 		},
+		onUnload() {
+			// 移除语言切换事件监听
+			i18n.off('languageChanged', this.onLanguageChanged);
+		},
 		methods: {
+			// 语言切换事件处理
+			onLanguageChanged(newLanguage) {
+				console.log('=== wallet页面收到语言切换事件 ===');
+				console.log('事件参数:', newLanguage);
+				console.log('当前i18n语言:', i18n.getCurrentLanguage());
+				// 更新所有国际化文本
+				this.updateI18nTexts();
+				console.log('=== wallet页面文本更新完成 ===');
+			},
+			
+			// 获取用户级别信息
+			async getUserLevel() {
+				try {
+					console.log('开始获取用户级别信息...');
+					
+					const result = await ajax.post('/api/wanlshop/user/getuserlvname', {});
+					
+					console.log('用户级别查询结果:', result);
+					
+					if (result && result.code === 1 && result.data) {
+						this.level_name_list = result.data;
+						console.log('级别信息获取成功:', this.level_name_list);
+						
+						// 收集所有有值的级别
+						const levels = [];
+						if (result.data.level_name1 && result.data.level_name1.trim() !== '') {
+							levels.push(result.data.level_name1);
+						}
+						if (result.data.level_name2 && result.data.level_name2.trim() !== '') {
+							levels.push(result.data.level_name2);
+						}
+						if (result.data.level_name3 && result.data.level_name3.trim() !== '') {
+							levels.push(result.data.level_name3);
+						}
+						
+						// 如果有级别信息，用逗号连接显示；否则显示默认级别
+						this.userLevel = levels.length > 0 ? levels.join('、') : '普通会员';
+						
+						console.log('当前用户级别:', this.userLevel);
+					} else {
+						console.log('级别接口返回错误:', result);
+						this.userLevel = '普通会员'; // 默认级别
+					}
+					
+				} catch (error) {
+					console.error('获取用户级别信息异常:', error);
+					this.userLevel = '普通会员'; // 默认级别
+				}
+			},
+			
+			// 更新国际化文本
+			updateI18nTexts() {
+				console.log('wallet页面更新国际化文本，当前语言:', i18n.getCurrentLanguage());
+				this.balanceText = i18n.t('current_balance');
+				this.walletDisconnectedText = i18n.t('wallet_disconnected');
+				this.connectWalletText = i18n.t('connect_wallet');
+				
+				// 更新大厅卡片数据
+				this.lobbyCards = [
+					{
+						duration: `3${i18n.t('minutes')}`,
+						type: i18n.t('lobby'),
+						openTime: i18n.t('open_time'),
+						timePerSession: `3${i18n.t('minutes_per_session')}`,
+						remainingQuota: 120,
+						buttonText: i18n.t('open')
+					},
+					{
+						duration: `3${i18n.t('minutes')}`,
+						type: i18n.t('lobby'),
+						openTime: i18n.t('open_time'),
+						timePerSession: `3${i18n.t('minutes_per_session')}`,
+						remainingQuota: 120,
+						buttonText: i18n.t('open')
+					},
+					{
+						duration: `3${i18n.t('minutes')}`,
+						type: i18n.t('lobby'),
+						openTime: i18n.t('open_time'),
+						timePerSession: `3${i18n.t('minutes_per_session')}`,
+						remainingQuota: 120,
+						buttonText: i18n.t('open')
+					},
+					{
+						duration: `3${i18n.t('minutes')}`,
+						type: i18n.t('lobby'),
+						openTime: i18n.t('open_time'),
+						timePerSession: `3${i18n.t('minutes_per_session')}`,
+						remainingQuota: 120,
+						buttonText: i18n.t('open')
+					},
+					{
+						duration: `3${i18n.t('minutes')}`,
+						type: i18n.t('lobby'),
+						openTime: i18n.t('open_time'),
+						timePerSession: `3${i18n.t('minutes_per_session')}`,
+						remainingQuota: 120,
+						buttonText: i18n.t('open')
+					},
+					{
+						duration: `3${i18n.t('minutes')}`,
+						type: i18n.t('lobby'),
+						openTime: i18n.t('open_time'),
+						timePerSession: `3${i18n.t('minutes_per_session')}`,
+						remainingQuota: 120,
+						buttonText: i18n.t('open')
+					},
+					{
+						duration: `3${i18n.t('minutes')}`,
+						type: i18n.t('lobby'),
+						openTime: i18n.t('open_time'),
+						timePerSession: `3${i18n.t('minutes_per_session')}`,
+						remainingQuota: 120,
+						buttonText: i18n.t('open')
+					},
+					{
+						duration: `3${i18n.t('minutes')}`,
+						type: i18n.t('lobby'),
+						openTime: i18n.t('open_time'),
+						timePerSession: `3${i18n.t('minutes_per_session')}`,
+						remainingQuota: 120,
+						buttonText: i18n.t('open')
+					},
+					{
+						duration: `3${i18n.t('minutes')}`,
+						type: i18n.t('lobby'),
+						openTime: i18n.t('open_time'),
+						timePerSession: `3${i18n.t('minutes_per_session')}`,
+						remainingQuota: 120,
+						buttonText: i18n.t('open')
+					}
+				];
+				
+				console.log('wallet页面国际化文本更新完成');
+			},
+			
 			// 检查钱包状态
 			async checkWalletStatus() {
 				try {

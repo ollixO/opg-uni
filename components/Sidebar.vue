@@ -16,13 +16,13 @@
 				<view class="menu-icon">
 					<image :src="item.icon" mode="aspectFit" class="icon-image"></image>
 				</view>
-				<text class="menu-text">{{ item.text }}</text>
+				<text class="menu-text">{{ getMenuText(item) }}</text>
 			</view>
 		</view>
 		
 		<!-- 语言选择器 -->
-		<view class="language-selector">
-			<text class="language-text">简体中文 ▼</text>
+		<view class="language-selector" @click="toggleLanguage">
+			<text class="language-text">{{ currentLanguage }} ▼</text>
 		</view>
 		
 		<!-- 底部装饰元素 -->
@@ -33,6 +33,8 @@
 </template>
 
 <script>
+import i18n from '@/utils/i18n.js';
+
 export default {
 	name: 'Sidebar',
 	props: {
@@ -43,13 +45,38 @@ export default {
 	},
 	data() {
 		return {
+			currentLanguage: '简体中文', // 当前语言
 			menuItems: [
-				{ text: '首页', icon: '@/static/x1.png', action: 'home' },
-				{ text: '节点认购', icon: '@/static/x2.png', action: 'node' },
-				{ text: '邀请好友', icon: '@/static/x3.png', action: 'invite' },
-				{ text: '个人中心', icon: '@/static/x4.png', action: 'profile' },
-				{ text: '充值', icon: '@/static/x5.png', action: 'recharge' },
-				{ text: '记录', icon: '@/static/x6.png', action: 'records' }
+				{ 
+					key: 'home',
+					icon: '/static/x1.png', 
+					action: 'home' 
+				},
+				{ 
+					key: 'node_subscription',
+					icon: '/static/x2.png', 
+					action: 'node' 
+				},
+				{ 
+					key: 'invite_friends',
+					icon: '/static/x3.png', 
+					action: 'invite' 
+				},
+				{ 
+					key: 'profile',
+					icon: '/static/x4.png', 
+					action: 'profile' 
+				},
+				{ 
+					key: 'recharge',
+					icon: '/static/x5.png', 
+					action: 'recharge' 
+				},
+				{ 
+					key: 'records',
+					icon: '/static/x6.png', 
+					action: 'records' 
+				}
 			]
 		}
 	},
@@ -59,9 +86,90 @@ export default {
 		}
 	},
 	mounted() {
-		console.log('Sidebar 组件已挂载, isOpen:', this.isOpen);
+		console.log('=== Sidebar 组件已挂载 ===');
+		console.log('isOpen:', this.isOpen);
+		// 初始化语言设置
+		this.currentLanguage = i18n.getCurrentLanguage();
+		console.log('Sidebar 初始化语言:', this.currentLanguage);
+		// 测试 i18n 功能
+		console.log('测试 i18n 翻译 - 首页:', i18n.t('home'));
+		console.log('测试 i18n 翻译 - 节点认购:', i18n.t('node_subscription'));
+		// 监听语言切换事件
+		console.log('准备添加语言切换监听器');
+		i18n.on('languageChanged', this.onLanguageChanged);
+		console.log('Sidebar 已添加语言切换监听器');
+		console.log('当前监听器数量:', i18n.listeners['languageChanged'] ? i18n.listeners['languageChanged'].length : 0);
+		
+		// 测试监听器是否工作
+		setTimeout(() => {
+			console.log('Sidebar: 5秒后测试监听器状态');
+			console.log('当前监听器数量:', i18n.listeners['languageChanged'] ? i18n.listeners['languageChanged'].length : 0);
+			if (i18n.listeners['languageChanged']) {
+				console.log('监听器列表:', i18n.listeners['languageChanged'].map((listener, index) => `监听器${index + 1}: ${listener.name || '匿名函数'}`));
+			}
+		}, 5000);
+	},
+	beforeDestroy() {
+		// 移除语言切换事件监听
+		i18n.off('languageChanged', this.onLanguageChanged);
 	},
 	methods: {
+		// 语言切换事件处理
+		onLanguageChanged(newLanguage) {
+			console.log('Sidebar 收到语言切换事件:', newLanguage);
+			this.currentLanguage = newLanguage;
+			// 强制更新组件以重新渲染菜单文本
+			this.$forceUpdate();
+			console.log('Sidebar 组件已强制更新');
+		},
+		
+		// 获取菜单文本（根据当前语言）
+		getMenuText(item) {
+			return i18n.t(item.key);
+		},
+		
+		// 切换语言
+		toggleLanguage() {
+			console.log('=== Sidebar 开始切换语言 ===');
+			console.log('切换前语言:', i18n.getCurrentLanguage());
+			console.log('切换前组件语言显示:', this.currentLanguage);
+			
+			const newLanguage = i18n.toggleLanguage();
+			
+			// 更新当前语言显示
+			this.currentLanguage = newLanguage;
+			
+			// 显示切换提示
+			uni.showToast({
+				title: i18n.isChinese() ? '已切换到中文' : 'Switched to English',
+				icon: 'success',
+				duration: 1500
+			});
+			
+			// 强制更新组件
+			this.$forceUpdate();
+			
+			// 直接通知父组件语言已切换
+			this.$emit('language-changed', newLanguage);
+			
+			// 尝试直接调用父组件的更新方法
+			if (this.$parent && this.$parent.onLanguageChanged) {
+				console.log('直接调用父组件的 onLanguageChanged 方法');
+				this.$parent.onLanguageChanged(newLanguage);
+			}
+			
+			// 语言切换后自动关闭侧边栏
+			this.$emit('menu-click', 'close');
+			console.log('语言切换完成，自动关闭侧边栏');
+			
+			console.log('=== Sidebar 语言切换完成 ===');
+			console.log('切换后语言:', newLanguage);
+			console.log('当前i18n语言:', i18n.getCurrentLanguage());
+			console.log('测试翻译 - 首页:', i18n.t('home'));
+			console.log('测试翻译 - 节点认购:', i18n.t('node_subscription'));
+			console.log('当前组件语言显示:', this.currentLanguage);
+		},
+		
 		handleMenuClick(item) {
 			// 触发父组件事件
 			this.$emit('menu-click', item);
@@ -69,14 +177,13 @@ export default {
 			// 根据菜单项执行相应操作
 			switch(item.action) {
 				case 'home':
-					uni.switchTab({
-						url: '/pages/index/index'
+					uni.navigateTo({
+						url: '/pages/wallet/wallet'
 					});
 					break;
 				case 'node':
-					uni.showToast({
-						title: '节点认购功能开发中',
-						icon: 'none'
+					uni.navigateTo({
+						url: '/pages/wallet/subscription'
 					});
 					break;
 				case 'invite':
@@ -86,7 +193,7 @@ export default {
 					break;
 				case 'profile':
 					uni.showToast({
-						title: '个人中心功能开发中',
+						title: i18n.t('feature_coming_soon'),
 						icon: 'none'
 					});
 					break;
@@ -97,7 +204,7 @@ export default {
 					break;
 				case 'records':
 					uni.showToast({
-						title: '记录功能开发中',
+						title: i18n.t('feature_coming_soon'),
 						icon: 'none'
 					});
 					break;
@@ -184,11 +291,18 @@ export default {
 	padding: 30rpx 20rpx;
 	text-align: center;
 	border-top: 1rpx solid rgba(255, 255, 255, 0.1);
+	transition: background-color 0.2s ease;
+	cursor: pointer;
+}
+
+.language-selector:active {
+	background: rgba(255, 255, 255, 0.1);
 }
 
 .language-text {
 	color: white;
 	font-size: 26rpx;
+	user-select: none;
 }
 
 /* 底部装饰 */

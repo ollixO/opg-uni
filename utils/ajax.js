@@ -30,7 +30,7 @@ class AjaxRequest {
     const token = uni.getStorageSync('token');
     if (token) {
       config.header = config.header || {};
-      config.header['Authorization'] = `Bearer ${token}`;
+      config.header['token'] = `${token}`;
     }
     
     console.log('请求拦截器:', config);
